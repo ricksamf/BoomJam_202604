@@ -1,0 +1,34 @@
+# UE 编译/中间产物
+Binaries/*
+!Binaries/Win64/
+Binaries/Win64/*
+!Binaries/Win64/UEGameJamEditor.target
+!Binaries/Win64/UnrealEditor.modules
+!Binaries/Win64/UnrealEditor-UEGameJam.dll
+!Binaries/Win64/UnrealEditor-UEGameJam.pdb
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# IDE
+*.sln
+.vs/
+.idea/
+*.VC.db
+*.VC.opendb
+
+# Claude
+.claude/
+CLAUDE.md
+
+# Millenarysnow
+GenerateBat.bat
+
+# Rider
+Plugins/Developer/RiderLink/
+UEGameJam.uproject.DotSettings.user
+
+# Codex
+Source/AGENTS.md
+AGENTS.md

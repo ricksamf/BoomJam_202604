@@ -299,6 +299,25 @@ void AGsPlayer::Landed(const FHitResult& Hit)
 	UpdateSafeLandingTransform();
 }
 
+void AGsPlayer::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+
+	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
+	const bool bWasMovingOnGround = PrevMovementMode == MOVE_Walking || PrevMovementMode == MOVE_NavWalking;
+	if (!bWasMovingOnGround
+		&& PlayerMovementComponent
+		&& PlayerMovementComponent->IsMovingOnGround()
+		&& !bIsDead
+		&& bIsSlideInputHeld
+		&& !bIsFalculaLaunching
+		&& !IsWallRunning()
+		&& !IsSliding())
+	{
+		StartSlide();
+	}
+}
+
 void AGsPlayer::MoveInput(const FInputActionValue& Value)
 {
 	const FVector2D MovementVector = Value.Get<FVector2D>();

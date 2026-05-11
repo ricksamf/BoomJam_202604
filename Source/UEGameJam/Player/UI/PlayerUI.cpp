@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "PlayerUI.h"
+#include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Player/Character/GsPlayer.h"
 
@@ -14,6 +15,7 @@ void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 
 	BoundPlayer = InPlayer;
 	SetDieTextVisible(false);
+	UpdateSkillCooldown();
 
 	if (!BoundPlayer)
 	{
@@ -26,6 +28,14 @@ void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 	{
 		HandlePlayerDeath();
 	}
+	UpdateSkillCooldown();
+}
+
+void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	UpdateSkillCooldown();
 }
 
 void UPlayerUI::NativeDestruct()
@@ -55,5 +65,13 @@ void UPlayerUI::SetDieTextVisible(bool bVisible)
 	if (DieText)
 	{
 		DieText->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+	}
+}
+
+void UPlayerUI::UpdateSkillCooldown()
+{
+	if (SkillCd)
+	{
+		SkillCd->SetPercent(BoundPlayer ? BoundPlayer->GetSkillCooldownPercent() : 1.0f);
 	}
 }

@@ -134,6 +134,9 @@ protected:
 	/** 最近一次成功触发钩索的时间 */
 	float LastFalculaTime = 0.0f;
 
+	/** 最近一次成功释放技能的时间 */
+	float LastSkillCastTime = 0.0f;
+
 	/** 进入冲刺前缓存的完整速度，用于冲刺结束时提取前向惯性和竖直速度 */
 	FVector PreDashVelocity = FVector::ZeroVector;
 
@@ -267,6 +270,7 @@ protected:
 	virtual void EndPlay(EEndPlayReason::Type EndPlayReason) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void Landed(const FHitResult& Hit) override;
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
 	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
 
 	/** 从 DataTable 应用玩家手感数值，未配置时使用 C++ 默认数值 */
@@ -335,6 +339,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category="Health")
 	float GetLifePercent() const;
+
+	UFUNCTION(BlueprintPure, Category="Skill")
+	float GetSkillCooldownPercent() const;
 
 	UFUNCTION(BlueprintPure, Category="Health")
 	bool IsDead() const;

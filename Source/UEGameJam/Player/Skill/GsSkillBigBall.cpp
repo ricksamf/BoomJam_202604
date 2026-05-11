@@ -50,12 +50,21 @@ void AGsSkillBigBall::BeginPlay()
 
 void AGsSkillBigBall::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	Super::EndPlay(EndPlayReason);
+}
+
+void AGsSkillBigBall::StartShrinking()
+{
+	if (Phase == EPhase::Shrinking)
+	{
+		return;
+	}
 	AGsSkillBall::ClearActiveSkillIf(this);
 	if (ActiveInstance.Get() == this)
 	{
 		ActiveInstance.Reset();
 	}
-	Super::EndPlay(EndPlayReason);
+	EnterPhase(EPhase::Shrinking);
 }
 
 void AGsSkillBigBall::Tick(float DeltaSeconds)
@@ -81,7 +90,7 @@ void AGsSkillBigBall::Tick(float DeltaSeconds)
 	{
 		if (PhaseElapsed >= HoldDuration)
 		{
-			EnterPhase(EPhase::Shrinking);
+			StartShrinking();
 		}
 		break;
 	}

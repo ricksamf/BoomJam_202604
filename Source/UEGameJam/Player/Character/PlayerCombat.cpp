@@ -15,6 +15,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Player/Character/GsPlayerResourceDataAsset.h"
 #include "Player/Scene/GsSkillAimAssistPoint.h"
+#include "Player/Skill/GsSkillBigBall.h"
 #include "Player/Skill/GsSkillBall.h"
 #include "TimerManager.h"
 
@@ -178,21 +179,22 @@ bool AGsPlayer::StartSkillCast()
 		return false;
 	}
 
-	// 上一次技能（飞行小球或落地大球）尚未结束 → 禁止再丢
-	if (AGsSkillBall::IsAnySkillActive())
-	{
-		return false;
-	}
-
 	UWorld* World = GetWorld();
 	if (!World)
 	{
 		return false;
 	}
 
+	const float CurrentWorldTime = World->GetTimeSeconds();
+	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
+	if ((CurrentWorldTime - LastSkillCastTime) < PlayerTuning.SkillCooldown)
+	{
+		return false;
+	}
+
 	const bool bShouldBypassSkillAction = IsSliding() || IsWallRunning();
 	const bool bStartedSkillAction = !bShouldBypassSkillAction;
-	if (bStartedSkillAction && !TryStartCharacterAction(EUEGameJamPlayerAction::Skill, GetPlayerTuning().SkillActionDuration))
+	if (bStartedSkillAction && !TryStartCharacterAction(EUEGameJamPlayerAction::Skill, PlayerTuning.SkillActionDuration))
 	{
 		return false;
 	}
@@ -205,6 +207,11 @@ bool AGsPlayer::StartSkillCast()
 	const FVector AimTarget = GetSkillAimTarget(ViewLocation, ViewDirection);
 	const FVector SpawnLocation = GetActorLocation();
 	const FRotator SpawnRotation = UKismetMathLibrary::FindLookAtRotation(SpawnLocation, AimTarget);
+
+	if (AGsSkillBigBall* ActiveBigBall = AGsSkillBigBall::GetActiveInstance())
+	{
+		ActiveBigBall->StartShrinking();
+	}
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
@@ -222,6 +229,7 @@ bool AGsPlayer::StartSkillCast()
 	}
 
 	SpawnedSkillBall->InitializeSkillBall(AimTarget);
+	LastSkillCastTime = CurrentWorldTime;
 
 	return true;
 }

@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerUI.generated.h"
 
+class UProgressBar;
 class AGsPlayer;
 class UTextBlock;
 
@@ -21,11 +22,15 @@ public:
 	void BindPlayer(AGsPlayer* InPlayer);
 
 protected:
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeDestruct() override;
 
 	/** 玩家死亡时显示的提示文本 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> DieText;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UProgressBar> SkillCd;
 
 private:
 	UPROPERTY(Transient)
@@ -38,4 +43,5 @@ private:
 	void HandlePlayerRespawn();
 
 	void SetDieTextVisible(bool bVisible);
+	void UpdateSkillCooldown();
 };

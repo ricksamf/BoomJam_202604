@@ -81,6 +81,9 @@ public:
 	 *  BeginPlay 时登记，EndPlay/Destroy 时清空。没有时返回 nullptr。 */
 	static AGsSkillBigBall* GetActiveInstance() { return ActiveInstance.Get(); }
 
+	/** 让大球提前进入收缩阶段，用于再次释放技能时清退场上已有大球 */
+	void StartShrinking();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;

@@ -86,13 +86,16 @@ void AGsPlayer::BeginPlay()
 	LastFallRecoveryTime = -PlayerTuning.SafeLandingMinInterval;
 	LastDashTime = -PlayerTuning.DashCooldown;
 	LastFalculaTime = -PlayerTuning.GrappleCooldown;
+	LastSkillCastTime = -PlayerTuning.SkillCooldown;
 	bIsFalculaLaunching = false;
 	ResetWallRunDetection();
 
 	if (UWorld* World = GetWorld())
 	{
-		LastDashTime = World->GetTimeSeconds() - PlayerTuning.DashCooldown;
-		LastFalculaTime = World->GetTimeSeconds() - PlayerTuning.GrappleCooldown;
+		const float CurrentWorldTime = World->GetTimeSeconds();
+		LastDashTime = CurrentWorldTime - PlayerTuning.DashCooldown;
+		LastFalculaTime = CurrentWorldTime - PlayerTuning.GrappleCooldown;
+		LastSkillCastTime = CurrentWorldTime - PlayerTuning.SkillCooldown;
 		if (AGsLevelStateGameState* LevelState = World->GetGameState<AGsLevelStateGameState>())
 		{
 			LevelState->EnsureFallbackRespawnTransform(GetActorTransform());
@@ -477,6 +480,24 @@ float AGsPlayer::GetLifePercent() const
 {
 	const float MaxHP = GetPlayerTuning().MaxHP;
 	return MaxHP > 0.0f ? FMath::Clamp(CurrentHP / MaxHP, 0.0f, 1.0f) : 0.0f;
+}
+
+float AGsPlayer::GetSkillCooldownPercent() const
+{
+	const float SkillCooldown = GetPlayerTuning().SkillCooldown;
+	if (SkillCooldown <= KINDA_SMALL_NUMBER)
+	{
+		return 1.0f;
+	}
+
+	const UWorld* World = GetWorld();
+	if (!World)
+	{
+		return 1.0f;
+	}
+
+	const float Elapsed = World->GetTimeSeconds() - LastSkillCastTime;
+	return FMath::Clamp(Elapsed / SkillCooldown, 0.0f, 1.0f);
 }
 
 bool AGsPlayer::IsDead() const

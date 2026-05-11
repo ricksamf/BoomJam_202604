@@ -134,6 +134,9 @@ protected:
 	/** 最近一次成功触发钩索的时间 */
 	float LastFalculaTime = 0.0f;
 
+	/** 最近一次成功释放技能的时间 */
+	float LastSkillCastTime = 0.0f;
+
 	/** 进入冲刺前缓存的完整速度，用于冲刺结束时提取前向惯性和竖直速度 */
 	FVector PreDashVelocity = FVector::ZeroVector;
 
@@ -336,6 +339,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category="Health")
 	float GetLifePercent() const;
+
+	UFUNCTION(BlueprintPure, Category="Skill")
+	float GetSkillCooldownPercent() const;
 
 	UFUNCTION(BlueprintPure, Category="Health")
 	bool IsDead() const;

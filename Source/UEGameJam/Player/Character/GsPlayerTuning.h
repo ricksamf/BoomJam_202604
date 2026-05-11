@@ -86,6 +86,10 @@ struct UEGAMEJAM_API FGsPlayerTuningRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Skill", meta = (ClampMin = 0, Units = "s"))
 	float SkillActionDuration = 0.15f;
 
+	/** 两次技能释放之间的冷却时间，数值越大连续释放间隔越久 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Skill", meta = (ClampMin = 0, Units = "s"))
+	float SkillCooldown = 1.0f;
+
 	/** 玩家默认视野角，静止或低速移动时相机会平滑回到这个 FOV */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera", meta = (ClampMin = 1, ClampMax = 170, Units = "deg"))
 	float DefaultCameraFOV = 100.0f;

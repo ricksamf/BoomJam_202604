@@ -31,8 +31,8 @@
 
 专属行为：
 - **Melee**：Capsule Hitbox（默认 NoCollision，Swing 窗口才开 QueryOnly）；`PerformDash` 用 `LaunchCharacter`；Hitbox 命中用 `AlreadyHitActors` 集合防止一次 Swing 多次触发
-- **Pistol**：MuzzleComp + Niagara Beam (LaserFX)；Tick 每帧把 `BeamEnd` 用户参数刷到玩家位置；`SetLaserFlicker` 设 `FlickerIntensity` 用户参数；`FireProjectile` Spawn AEnemyProjectile
-- **MachineGun**：MuzzleComp + Niagara WarningLasersFX；Tick 处理两件事 — 预警激光 BeamEnd 刷新 + Burst 期的缓慢偏航跟踪（`RInterpConstantTo`）；`FireOneBullet` 用 `FMath::VRandCone` 做扇形散射
+- **Pistol**：MuzzleComp + Niagara Beam (LaserFX)；Tick 每帧把 `BeamEnd` 用户参数刷到玩家位置；`SetLaserFlicker` 设 `FlickerIntensity` 用户参数；`FireProjectile` Spawn AEnemyProjectile 并 Spawn `MuzzleFlashFX`；`SpawnWarningFX()` 在枪口位置一次性 Spawn `WarningMuzzleFX`（由 PistolAim Task 在 Aim 剩余 `WarningLeadTime` 时触发）
+- **MachineGun**：MuzzleComp + Niagara WarningLasersFX；Tick 处理两件事 — 预警激光 BeamEnd 刷新 + Burst 期的缓慢偏航跟踪（`RInterpConstantTo`）；`FireOneBullet` 用 `FMath::VRandCone` 做扇形散射并 Spawn `MuzzleFlashFX`；`SpawnWarningFX()` 在枪口位置一次性 Spawn `WarningMuzzleFX`（由 MGWarmup Task 在 Warmup 剩余 `WarningLeadTime` 时触发）
 
 ### 1.2 StateTree 层（`Source/UEGameJam/Enemy/StateTree/`）
 
@@ -44,7 +44,7 @@ Idle / Lockon / Aim / Warmup / Fire / Burst / Recover / Cooldown — 仅作为 `
 
 | Task | 用途 | 关键行为 |
 |---|---|---|
-| `FEnemyAcquireTargetTask` | 感知玩家 | Tick 调 `FindPlayerByTag + Radius + 可选 LOS`；输出 `TargetActor` / `bFound`；若判定丢目标会同步清掉 `AIController` 的玩家缓存，避免远程敌人卡在攻击循环；**从不 Succeed**（随状态退出才停） |
+| `FEnemyAcquireTargetTask` | 感知玩家 | Tick 调 `FindPlayerByTag + Radius + 2D 锥形视野 + 可选 LOS`；输出 `TargetActor` / `bFound`；若判定丢目标（超出半径 / 出视野锥 / LOS 被挡）会同步清掉 `AIController` 的玩家缓存，避免远程敌人卡在攻击循环；**从不 Succeed**（随状态退出才停）。视野锥参数见 §5.9 |
 | `FEnemyMoveToTargetTask` | 移动跟踪 | `EnterState` 先强制 Repath；Tick 距离检查 + 每 `RepathInterval` 重发 `MoveTo` 请求以跟踪移动玩家；到达 AcceptRadius 内即 Succeeded；ExitState `AbortMove` |
 | `FEnemyPatrolTask` | 巡逻 | `EnterState` 记录 Origin；在 PatrolRadius 内用 `NavSys->GetRandomReachablePointInRadius` 选点，到达后等 IdleBetweenPoints 再选下一个 |
 | `FEnemyFacePlayerTask` | 朝向玩家 | Tick 用 `RInterpConstantTo` 改 Yaw；从不 Succeed |
@@ -184,7 +184,7 @@ Root
     │
     ├── Aim
     │   ├── [Task] Face Player
-    │   ├── [Task] Pistol Aim (Duration=1.0, FlickerStartRatio=0.7)
+    │   ├── [Task] Pistol Aim (Duration=1.0, FlickerStartRatio=0.7, WarningLeadTime=0.5)
     │   ├── [Transition] → Searching (On Tick, Cond: Has Player Target, bInvert=true)
     │   └── [Transition] → Fire      (On State Completed)
     │
@@ -206,7 +206,7 @@ Root
     │
     ├── Warmup
     │   ├── [Task] Face Player (Yaw 180°/s)
-    │   ├── [Task] MG Warmup   (Duration=1.25)  // 激光预警
+    │   ├── [Task] MG Warmup   (Duration=1.25, WarningLeadTime=0.5)  // 激光预警 + 开火前枪口预警 FX
     │   ├── [Transition] → Searching (On Tick, Cond: Has Player Target, bInvert=true)
     │   └── [Transition] → Burst     (On State Completed)
     │
@@ -230,8 +230,8 @@ Warmup 允许中断（丢目标则回 Searching），Burst 不允许（一旦开
 |---|---|---|
 | `UEnemyDataAsset` | MaxHP / DetectionRadius / LoseSightTimeout / WalkSpeed / ChaseSpeed / **StateTreeAsset** | 通用 |
 | `UMeleeEnemyDataAsset` | AttackRadius / LockOnDuration / DashImpulse / DashDuration / HitboxActiveWindow / SwingDuration / AttackRecovery / MeleeDamage / bPatrol / PatrolRadius / PatrolIdleTime | 近战 |
-| `UPistolEnemyDataAsset` | AimDuration / AimFlickerStartRatio / Cooldown / ProjectileSpeed / ProjectileDamage* / ProjectileClass / LaserNiagara / MuzzleFlashFX | 手枪 |
-| `UMachineGunEnemyDataAsset` | WarmupDuration / BurstDuration / Cooldown / FireRate / SpreadHalfAngleDeg / TrackingYawSpeed / BulletDamage* / BulletSpeed / ProjectileClass / WarningLasersNiagara / MuzzleFlashFX | 机枪 |
+| `UPistolEnemyDataAsset` | AimDuration / AimFlickerStartRatio / Cooldown / ProjectileSpeed / ProjectileDamage* / ProjectileClass / LaserNiagara / MuzzleFlashFX / **WarningMuzzleFX** / FireMontage | 手枪 |
+| `UMachineGunEnemyDataAsset` | WarmupDuration / BurstDuration / Cooldown / FireRate / SpreadHalfAngleDeg / TrackingYawSpeed / BulletDamage* / BulletSpeed / ProjectileClass / WarningLasersNiagara / MuzzleFlashFX / **WarningMuzzleFX** / BurstMontage | 机枪 |
 
 \* `ProjectileDamage` / `BulletDamage` 字段**未被消费**（见 §7.2）。实际伤害读 `AEnemyProjectile::Damage`（子弹蓝图 Class Defaults 里填）。
 
@@ -433,6 +433,31 @@ float AEnemyCharacter::TakeDamage(...)
 
 **与 `AGhostMeleeEnemy` 的关系**：Ghost 早期实现里自己 `PostInitializeComponents` 销毁基类 RealmTag 再 new 一个 HurtSwitch、`TakeDamage` 自己判 `IsHurtable`。基类升级后这两段逻辑都变成"防御性空转"——基类已经创建好 HurtSwitch、已经在 TakeDamage 里做判定。Ghost 的 override 行为仍正确，不破坏，但已经冗余，后续可清理（删除 Ghost 的 PostInitComponents 和 TakeDamage override，仅保留 `DefaultRealmType = Realm`）。
 
+### 5.9 视野锥（2D yaw-only）
+
+`FEnemyAcquireTargetTask` 的感知在半径判定之后、LOS 判定之前，还会做一次"敌人前向视野锥"判定。InstanceData 上两个相关字段：
+
+| 字段 | 默认 | 作用 |
+|---|---|---|
+| `DetectionHalfAngleDeg` | 45 | 视野**半角**（度）。前向 ±45°（共 90°）内算入视野。**`>= 180` 退化为全向圆形**，用于不需要视野限制的敌人（例如机枪塔） |
+| `bDrawDebugCone` | false | 勾选后每 Tick 用 `DrawDebugCone` 画出黄色锥体，便于美术/设计调参 |
+
+判定流程：
+```
+Forward2D  = Enemy.GetActorForwardVector().GetSafeNormal2D()
+ToPlayer2D = (Player - Enemy).GetSafeNormal2D()
+cos(HalfAngle) > Dot(Forward2D, ToPlayer2D) → 出锥，走丢目标分支
+```
+
+**关键设计点**：
+
+- **2D（yaw-only）**：忽略 pitch，与 `FEnemyFacePlayerTask` 只改 Yaw 的行为一致。避免玩家在楼梯/高度差上触发误丢，也避免敌人 Mesh 轻微 pitch 晃动导致视野飘。
+- **半角而非全角**：代码里直接 `FMath::Cos(DegreesToRadians(HalfAngle))`，半角和点积阈值一一对应，不易算错。字段名 `HalfAngleDeg` 明示语义。
+- **出锥立即丢目标**：走与"超出半径"相同的失败分支（清 `TargetActor` / `bFound` / `Controller->ClearCachedPlayer()`）。这样 §5.4 的 "丢目标打断" 逻辑自然生效——玩家绕到敌人背后即可让 Chase/Aim/Warmup 回到 Searching。没有"一旦锁定就永远不丢"的 sticky 模式；需要时可在 Task 里加 `bHasAcquired` 状态后实现。
+- **零向量防御**：Spawn 首帧 Forward/ToPlayer 可能为零向量，`IsNearlyZero()` 检查后跳过锥判定（当帧不误丢）。
+- **参数位置与 `DetectionRadius` 一致**：都挂在 Task InstanceData 上，由每棵 StateTree 资产的 Acquire Target 节点独立配置，**不走 `UEnemyDataAsset`**。三棵 ST（Melee/Pistol/MG）默认都会用 45° 半角，无需手动改。某类敌人要全向就把该节点上的值改成 180。
+- **调试绘制位置**：绘制在"玩家存在性检查"之前，所以即使场景里没有带 `"Player"` Tag 的 Pawn 也能看到锥形，方便单独调视野范围。
+
 ---
 
 ## 6. 扩展指南
@@ -558,7 +583,9 @@ if (Proj) {
    - FacePlayer 紫
    - WaitPhase 青
    - MeleeDash 橙、MeleeSwing 黄
-6. **Pistol / MG 的 Niagara 资产约定**：System 必须有一个 `BeamEnd` 用户参数（Position 或 Vector3），C++ 的 Tick 每帧刷它；Pistol 还需要 `FlickerIntensity` (Float)。拼错名字 C++ `SetVariableVec3` 静默失败。
+6. **Pistol / MG 的 Niagara 资产约定**：
+   - **持续型特效**（`LaserNiagara` / `WarningLasersNiagara`）：绑在 `LaserFX` / `WarningLasersFX` Niagara 组件上，System 必须有 `BeamEnd` 用户参数（Position 或 Vector3），C++ 的 Tick 每帧刷它；Pistol 还需要 `FlickerIntensity` (Float)。拼错名字 C++ `SetVariableVec3` 静默失败。
+   - **一次性特效**（`MuzzleFlashFX` / `WarningMuzzleFX`）：走 `UNiagaraFunctionLibrary::SpawnSystemAtLocation`，每次在枪口位置生成一个独立实例后自毁，不需要 `BeamEnd` 参数。`WarningMuzzleFX` 由 PistolAim / MGWarmup Task 在"剩余时间 ≤ `WarningLeadTime`"时触发一次（默认 0.5s，Task 参数可调）；`MuzzleFlashFX` 由 `FireProjectile` / `FireOneBullet` 每次开火触发一次。
 7. **玩家必须挂 Actor Tag `"Player"`**，三处代码都靠它识别玩家（AIController / Projectile / Melee Hitbox）。
 8. **Realm 系统集成注意**：
    - 敌人本体由基类自动用 `URealmHurtSwitchComponent` 替换默认 RealmTag（不切 SetActorEnableCollision），跨世界规则由基类 `TakeDamage` 按 `RealmType` 处理（见 §5.8）。继承 `AEnemyCharacter` 即可，蓝图无需额外配置。

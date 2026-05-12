@@ -43,8 +43,16 @@ struct FEnemyAcquireTargetTaskInstanceData
 	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
 	float DetectionRadius = 1500.f;
 
+	/** 视野锥半角（度）。前向 ±HalfAngle 内视为可见；>=180 退化为全向圆形。 */
+	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0, ClampMax=180))
+	float DetectionHalfAngleDeg = 45.f;
+
 	UPROPERTY(EditAnywhere, Category="Parameter")
 	bool bRequireLineOfSight = false;
+
+	/** 勾选后在 PIE 里用 DrawDebugCone 可视化视野（仅调试用，发布前关掉） */
+	UPROPERTY(EditAnywhere, Category="Debug")
+	bool bDrawDebugCone = false;
 
 	UPROPERTY(EditAnywhere, Category="Output")
 	TObjectPtr<AActor> TargetActor = nullptr;

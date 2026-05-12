@@ -37,6 +37,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Enemy|Pistol")
 	void FireProjectile(const FVector& AimLocation);
 
+	/** 播放 DataAsset 里配置的 FireMontage（由 FireProjectile 调用） */
+	UFUNCTION(BlueprintCallable, Category="Enemy|Pistol")
+	void PlayAttackMontage();
+
+	/** 在枪口位置一次性 Spawn DataAsset 里的 WarningMuzzleFX（开火前预警特效） */
+	UFUNCTION(BlueprintCallable, Category="Enemy|Pistol")
+	void SpawnWarningFX();
+
 	UFUNCTION(BlueprintPure, Category="Enemy|Pistol")
 	FVector GetMuzzleLocation() const;
 

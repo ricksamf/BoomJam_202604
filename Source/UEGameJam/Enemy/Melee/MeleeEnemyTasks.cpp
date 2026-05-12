@@ -99,6 +99,7 @@ EStateTreeRunStatus FEnemyMeleeSwingTask::EnterState(FStateTreeExecutionContext&
 
 	Data.MeleeEnemy->SetMeleeHitboxActive(true);
 	Data.bHitboxActive = true;
+	Data.MeleeEnemy->PlayAttackMontage();
 	PrintEnemyTaskDebug(TEXT("MeleeSwing: ENTER (hitbox ON)"), FColor::Yellow);
 	return EStateTreeRunStatus::Running;
 }

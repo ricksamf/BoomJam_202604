@@ -11,6 +11,7 @@
 
 class AEnemyProjectile;
 class UNiagaraSystem;
+class UAnimMontage;
 
 UCLASS(BlueprintType)
 class UEGAMEJAM_API UPistolEnemyDataAsset : public UEnemyDataAsset
@@ -49,4 +50,12 @@ public:
 	/** 开火闪光 Niagara */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|FX")
 	TObjectPtr<UNiagaraSystem> MuzzleFlashFX;
+
+	/** 开火前的枪口预警 Niagara(Aim 剩余时间到 WarningLeadTime 时一次性在枪口 Spawn) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|FX")
+	TObjectPtr<UNiagaraSystem> WarningMuzzleFX;
+
+	/** 开火动画 Montage（在 FireProjectile 时播一次，留空即不播） */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|Anim")
+	TObjectPtr<UAnimMontage> FireMontage;
 };

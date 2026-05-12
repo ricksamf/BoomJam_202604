@@ -43,8 +43,16 @@ struct FEnemyAcquireTargetTaskInstanceData
 	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
 	float DetectionRadius = 1500.f;
 
+	/** 视野锥半角（度）。前向 ±HalfAngle 内视为可见；>=180 退化为全向圆形。 */
+	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0, ClampMax=180))
+	float DetectionHalfAngleDeg = 45.f;
+
 	UPROPERTY(EditAnywhere, Category="Parameter")
 	bool bRequireLineOfSight = false;
+
+	/** 勾选后在 PIE 里用 DrawDebugCone 可视化视野（仅调试用，发布前关掉） */
+	UPROPERTY(EditAnywhere, Category="Debug")
+	bool bDrawDebugCone = false;
 
 	UPROPERTY(EditAnywhere, Category="Output")
 	TObjectPtr<AActor> TargetActor = nullptr;
@@ -277,6 +285,37 @@ struct UEGAMEJAM_API FEnemySetMovementSpeedTask : public FStateTreeTaskCommonBas
 };
 
 ////////////////////////////////////////////////////////////////////
+// SetRotationRate
+
+USTRUCT()
+struct FEnemySetRotationRateTaskInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category="Context")
+	TObjectPtr<AEnemyCharacter> Enemy;
+
+	/** 移动转身速率（度/秒），写入 CharacterMovement.RotationRate.Yaw（bOrientRotationToMovement=true 时生效） */
+	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
+	float YawRateDeg = 540.f;
+};
+
+USTRUCT(meta=(DisplayName="Enemy: Set Rotation Rate", Category="Enemy"))
+struct UEGAMEJAM_API FEnemySetRotationRateTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FEnemySetRotationRateTaskInstanceData;
+	virtual const UStruct* GetInstanceDataType() const override { return FInstanceDataType::StaticStruct(); }
+
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+
+#if WITH_EDITOR
+	virtual FText GetDescription(const FGuid& ID, FStateTreeDataView InstanceDataView, const IStateTreeBindingLookup& BindingLookup, EStateTreeNodeFormatting Formatting = EStateTreeNodeFormatting::Text) const override;
+#endif
+};
+
+////////////////////////////////////////////////////////////////////
 // MeleeDash
 
 USTRUCT()
@@ -382,11 +421,18 @@ struct FEnemyPistolAimTaskInstanceData
 	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0, ClampMax=1))
 	float FlickerStartRatio = 0.7f;
 
+	/** 开火前多少秒触发 WarningMuzzleFX（Aim 剩余时间 ≤ 该值时一次性 Spawn） */
+	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
+	float WarningLeadTime = 0.5f;
+
 	UPROPERTY()
 	float ElapsedTime = 0.f;
 
 	UPROPERTY()
 	bool bFlickerStarted = false;
+
+	UPROPERTY()
+	bool bWarningSpawned = false;
 };
 
 USTRUCT(meta=(DisplayName="Enemy: Pistol Aim", Category="Enemy|Pistol"))
@@ -455,8 +501,15 @@ struct FEnemyMGWarmupTaskInstanceData
 	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
 	float Duration = 1.25f;
 
+	/** 开火前多少秒触发 WarningMuzzleFX（Warmup 剩余时间 ≤ 该值时一次性 Spawn） */
+	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
+	float WarningLeadTime = 0.5f;
+
 	UPROPERTY()
 	float ElapsedTime = 0.f;
+
+	UPROPERTY()
+	bool bWarningSpawned = false;
 };
 
 USTRUCT(meta=(DisplayName="Enemy: MG Warmup", Category="Enemy|MachineGun"))

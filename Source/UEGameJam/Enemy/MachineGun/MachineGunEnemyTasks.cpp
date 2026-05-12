@@ -20,6 +20,7 @@ EStateTreeRunStatus FEnemyMGWarmupTask::EnterState(FStateTreeExecutionContext& C
 {
 	FInstanceDataType& Data = Context.GetInstanceData(*this);
 	Data.ElapsedTime = 0.f;
+	Data.bWarningSpawned = false;
 
 	if (!IsValid(Data.MGEnemy))
 	{
@@ -34,6 +35,15 @@ EStateTreeRunStatus FEnemyMGWarmupTask::Tick(FStateTreeExecutionContext& Context
 {
 	FInstanceDataType& Data = Context.GetInstanceData(*this);
 	Data.ElapsedTime += DeltaTime;
+
+	// 剩余时间 ≤ WarningLeadTime 时一次性 Spawn 枪口预警特效
+	if (!Data.bWarningSpawned && IsValid(Data.MGEnemy)
+		&& Data.ElapsedTime >= (Data.Duration - Data.WarningLeadTime))
+	{
+		Data.MGEnemy->SpawnWarningFX();
+		Data.bWarningSpawned = true;
+	}
+
 	return (Data.ElapsedTime >= Data.Duration) ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;
 }
 

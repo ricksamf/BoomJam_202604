@@ -5,6 +5,7 @@
 #include "MachineGunEnemy.h"
 #include "MachineGunEnemyDataAsset.h"
 #include "EnemyProjectile.h"
+#include "Animation/AnimMontage.h"
 #include "Components/SceneComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
@@ -118,6 +119,8 @@ void AMachineGunEnemy::FireOneBullet(const FVector& AimLocation)
 		return;
 	}
 
+	PlayAttackMontage();
+
 	const FVector SpawnLoc = GetMuzzleLocation();
 	FVector BaseDir = AimLocation - SpawnLoc;
 	if (BaseDir.IsNearlyZero())
@@ -150,4 +153,33 @@ void AMachineGunEnemy::FireOneBullet(const FVector& AimLocation)
 FVector AMachineGunEnemy::GetMuzzleLocation() const
 {
 	return MuzzleComp ? MuzzleComp->GetComponentLocation() : GetActorLocation();
+}
+
+void AMachineGunEnemy::PlayAttackMontage()
+{
+	if (IsDead())
+	{
+		return;
+	}
+	const UMachineGunEnemyDataAsset* Data = Cast<UMachineGunEnemyDataAsset>(EnemyData);
+	if (!Data || !Data->BurstMontage)
+	{
+		return;
+	}
+	PlayAnimMontage(Data->BurstMontage);
+}
+
+void AMachineGunEnemy::SpawnWarningFX()
+{
+	if (IsDead() || !EnemyData)
+	{
+		return;
+	}
+	const UMachineGunEnemyDataAsset* Data = Cast<UMachineGunEnemyDataAsset>(EnemyData);
+	if (!Data || !Data->WarningMuzzleFX)
+	{
+		return;
+	}
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, Data->WarningMuzzleFX,
+		GetMuzzleLocation(), GetActorForwardVector().Rotation());
 }

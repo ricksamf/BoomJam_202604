@@ -9,6 +9,7 @@
 class AGsSkillBall;
 class UAnimMontage;
 class UInputAction;
+class USoundBase;
 
 /**
  * 玩家资源引用配置。
@@ -54,6 +55,26 @@ public:
 	/** 近战攻击时播放的动画蒙太奇 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Melee")
 	TObjectPtr<UAnimMontage> MeleeAttackMontage;
+
+	/** 近战攻击挥剑时播放的破空音效 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Melee")
+	TObjectPtr<USoundBase> MeleeSwingSound;
+
+	/** 近战攻击实际砍中敌人时播放的命中音效 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Melee")
+	TObjectPtr<USoundBase> MeleeHitSound;
+
+	/** 释放或结束滑铲时播放的音效 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")
+	TObjectPtr<USoundBase> SlideReleaseSound;
+
+	/** 成功释放钩索并开始牵引时播放的音效 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")
+	TObjectPtr<USoundBase> GrappleReleaseSound;
+
+	/** 角色死亡时播放的音效 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Health")
+	TObjectPtr<USoundBase> DeathSound;
 
 	/** 技能释放时生成的技能球类，可在蓝图中替换具体表现 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Skill")

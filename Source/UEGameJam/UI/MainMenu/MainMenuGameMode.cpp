@@ -3,6 +3,7 @@
 
 #include "MainMenuGameMode.h"
 
+#include "Audio/BgmSubsystem.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
@@ -11,6 +12,11 @@
 void AMainMenuGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (UBgmSubsystem* BgmSubsystem = UBgmSubsystem::Get(this))
+	{
+		BgmSubsystem->PlayDefaultBGM();
+	}
 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (!PlayerController || !MainMenuWidgetClass)

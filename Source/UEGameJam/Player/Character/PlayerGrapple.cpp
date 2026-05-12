@@ -8,6 +8,8 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "Kismet/GameplayStatics.h"
+#include "Player/Character/GsPlayerResourceDataAsset.h"
 #include "Player/Scene/GsGrapplePoint.h"
 
 static constexpr float GrappleFinishDistance = 80.0f;
@@ -78,6 +80,11 @@ void AGsPlayer::DoFalcula()
 	PreGrappleCustomMovementMode = PlayerMovementComponent->CustomMovementMode;
 	LastFalculaTime = CurrentWorldTime;
 	bIsFalculaLaunching = true;
+
+	if (PlayerResourceData && PlayerResourceData->GrappleReleaseSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->GrappleReleaseSound, GetActorLocation());
+	}
 
 	PlayerMovementComponent->StopMovementImmediately();
 	PlayerMovementComponent->StopActiveMovement();

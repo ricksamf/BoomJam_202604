@@ -2,7 +2,9 @@
 
 #include "Player/Skill/GsSkillBigBall.h"
 
+#include "Components/AudioComponent.h"
 #include "Components/SphereComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Player/Skill/GsSkillBall.h"
 #include "RealmRevealerComponent.h"
 
@@ -32,6 +34,11 @@ void AGsSkillBigBall::BeginPlay()
 	// 登记为全局活跃大球，供 Enemy 模块 O(1) 查询最大揭示半径。
 	ActiveInstance = this;
 
+	if (HoldSound)
+	{
+		HoldSoundComponent = UGameplayStatics::SpawnSoundAtLocation(this, HoldSound, GetActorLocation(), FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f, nullptr, nullptr, false);
+	}
+
 	if (CollisionComponent)
 	{
 		CollisionComponent->SetSphereRadius(CollisionRadius, true);
@@ -50,6 +57,8 @@ void AGsSkillBigBall::BeginPlay()
 
 void AGsSkillBigBall::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	StopHoldSound();
+
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -59,6 +68,14 @@ void AGsSkillBigBall::StartShrinking()
 	{
 		return;
 	}
+
+	StopHoldSound();
+
+	if (ReleaseSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ReleaseSound, GetActorLocation());
+	}
+
 	AGsSkillBall::ClearActiveSkillIf(this);
 	if (ActiveInstance.Get() == this)
 	{
@@ -121,4 +138,16 @@ void AGsSkillBigBall::EnterPhase(EPhase NewPhase)
 {
 	Phase = NewPhase;
 	PhaseElapsed = 0.0f;
+}
+
+void AGsSkillBigBall::StopHoldSound()
+{
+	if (!HoldSoundComponent)
+	{
+		return;
+	}
+
+	HoldSoundComponent->Stop();
+	HoldSoundComponent->DestroyComponent();
+	HoldSoundComponent = nullptr;
 }

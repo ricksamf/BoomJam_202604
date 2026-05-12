@@ -10,6 +10,7 @@
 class UAudioComponent;
 class UAudioDataAsset;
 class USoundBase;
+class USoundClass;
 
 /**
  * 全局BGM子系统
@@ -19,6 +20,7 @@ class UEGAMEJAM_API UBgmSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 public:
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
 	/** 便捷访问器 */
@@ -41,6 +43,22 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Audio|BGM")
 	void StopBGM();
 
+	/** 设置BGM音量，范围0到1 */
+	UFUNCTION(BlueprintCallable, Category="Audio|Volume")
+	void SetBGMVolume(float NewVolume);
+
+	/** 获取当前BGM音量 */
+	UFUNCTION(BlueprintPure, Category="Audio|Volume")
+	float GetBGMVolume() const { return BGMVolume; }
+
+	/** 设置音效音量，范围0到1 */
+	UFUNCTION(BlueprintCallable, Category="Audio|Volume")
+	void SetSFXVolume(float NewVolume);
+
+	/** 获取当前音效音量 */
+	UFUNCTION(BlueprintPure, Category="Audio|Volume")
+	float GetSFXVolume() const { return SFXVolume; }
+
 protected:
 	/** 默认BGM淡入时间 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio|BGM", meta=(ClampMin="0.0"))
@@ -62,21 +80,40 @@ private:
 	TObjectPtr<UAudioComponent> IntroBGMComponent;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent> CombatBGMComponent;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UAudioComponent> SurfaceBGMComponent;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UAudioComponent> RealmBGMComponent;
+
+	UPROPERTY(Transient)
+	TObjectPtr<USoundClass> CachedBGMSoundClass;
+
+	UPROPERTY(Transient)
+	TObjectPtr<USoundClass> CachedSFXSoundClass;
 
 	FTimerHandle IntroTimerHandle;
 
 	ERealmType PendingCombatRealm = ERealmType::Surface;
 	ERealmType CurrentCombatRealm = ERealmType::Surface;
 	bool bCombatLoopStarted = false;
+	bool bCachedOriginalBGMVolume = false;
+	bool bCachedOriginalSFXVolume = false;
+	float BGMVolume = 1.f;
+	float SFXVolume = 1.f;
+	float OriginalBGMClassVolume = 1.f;
+	float OriginalSFXClassVolume = 1.f;
 
 	UAudioDataAsset* GetAudioData() const;
-	UAudioComponent* CreateBGMComponent(USoundBase* Sound, float Volume);
+	UAudioComponent* CreateBGMComponent(USoundBase* Sound);
 	void StartCombatLoop();
 	void ApplyCombatMix(float FadeTime);
+	void ApplyBGMVolume();
+	void ApplySoundClassVolumes();
+	void CacheSoundClasses();
+	void RestoreOriginalSoundClassVolumes();
 	void StopComponent(TObjectPtr<UAudioComponent>& Component, float FadeTime);
 	void ClearIntroTimer();
 };

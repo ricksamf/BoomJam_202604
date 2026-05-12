@@ -7,6 +7,7 @@
 #include "GsProjectResourceSettings.generated.h"
 
 class UAudioDataAsset;
+class USoundClass;
 
 /**
  * 项目资源配置。
@@ -22,4 +23,12 @@ public:
 	/** 全局音频资源配置，用于集中指定项目使用的音效资源DataAsset */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Audio")
 	TSoftObjectPtr<UAudioDataAsset> AudioDataAsset;
+
+	/** BGM声音分类，用于设置菜单统一调节背景音乐音量 */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Audio")
+	TSoftObjectPtr<USoundClass> BGMSoundClass;
+
+	/** 音效声音分类，用于设置菜单统一调节战斗和操作音效音量 */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Audio")
+	TSoftObjectPtr<USoundClass> SFXSoundClass;
 };

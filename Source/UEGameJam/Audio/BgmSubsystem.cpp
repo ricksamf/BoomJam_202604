@@ -5,13 +5,29 @@
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
+#include "Player/Game/GsPlayerSaveGame.h"
 #include "Settings/GsProjectResourceSettings.h"
+#include "Sound/SoundClass.h"
 #include "Sound/SoundBase.h"
 #include "TimerManager.h"
+
+void UBgmSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+
+	if (UGsPlayerSaveGame* SaveGame = UGsPlayerSaveGame::LoadOrCreate())
+	{
+		BGMVolume = SaveGame->GetBGMVolume();
+		SFXVolume = SaveGame->GetSFXVolume();
+	}
+
+	ApplySoundClassVolumes();
+}
 
 void UBgmSubsystem::Deinitialize()
 {
 	StopBGM();
+	RestoreOriginalSoundClassVolumes();
 	Super::Deinitialize();
 }
 
@@ -32,6 +48,7 @@ void UBgmSubsystem::PlayDefaultBGM()
 	ClearIntroTimer();
 	bCombatLoopStarted = false;
 	StopComponent(IntroBGMComponent, 0.f);
+	StopComponent(CombatBGMComponent, 0.f);
 	StopComponent(SurfaceBGMComponent, 0.f);
 	StopComponent(RealmBGMComponent, 0.f);
 
@@ -43,7 +60,7 @@ void UBgmSubsystem::PlayDefaultBGM()
 	}
 
 	StopComponent(DefaultBGMComponent, 0.f);
-	DefaultBGMComponent = CreateBGMComponent(AudioData->DefaultBGM, 0.f);
+	DefaultBGMComponent = CreateBGMComponent(AudioData->DefaultBGM);
 	if (DefaultBGMComponent)
 	{
 		DefaultBGMComponent->FadeIn(DefaultFadeInTime, 1.f);
@@ -59,6 +76,7 @@ void UBgmSubsystem::PlayCombatBGM(ERealmType InitialRealm)
 
 	StopComponent(DefaultBGMComponent, StopFadeOutTime);
 	StopComponent(IntroBGMComponent, 0.f);
+	StopComponent(CombatBGMComponent, 0.f);
 	StopComponent(SurfaceBGMComponent, 0.f);
 	StopComponent(RealmBGMComponent, 0.f);
 
@@ -74,7 +92,7 @@ void UBgmSubsystem::PlayCombatBGM(ERealmType InitialRealm)
 		return;
 	}
 
-	IntroBGMComponent = CreateBGMComponent(AudioData->IntroBGM, 1.f);
+	IntroBGMComponent = CreateBGMComponent(AudioData->IntroBGM);
 	if (!IntroBGMComponent)
 	{
 		StartCombatLoop();
@@ -82,6 +100,7 @@ void UBgmSubsystem::PlayCombatBGM(ERealmType InitialRealm)
 	}
 
 	IntroBGMComponent->Play();
+	IntroBGMComponent->SetVolumeMultiplier(1.f);
 
 	const float IntroDuration = AudioData->IntroBGM->GetDuration();
 	if (IntroDuration > 0.f)
@@ -121,8 +140,21 @@ void UBgmSubsystem::StopBGM()
 
 	StopComponent(DefaultBGMComponent, StopFadeOutTime);
 	StopComponent(IntroBGMComponent, StopFadeOutTime);
+	StopComponent(CombatBGMComponent, StopFadeOutTime);
 	StopComponent(SurfaceBGMComponent, StopFadeOutTime);
 	StopComponent(RealmBGMComponent, StopFadeOutTime);
+}
+
+void UBgmSubsystem::SetBGMVolume(float NewVolume)
+{
+	BGMVolume = FMath::Clamp(NewVolume, 0.f, 1.f);
+	ApplyBGMVolume();
+}
+
+void UBgmSubsystem::SetSFXVolume(float NewVolume)
+{
+	SFXVolume = FMath::Clamp(NewVolume, 0.f, 1.f);
+	ApplySoundClassVolumes();
 }
 
 UAudioDataAsset* UBgmSubsystem::GetAudioData() const
@@ -131,18 +163,18 @@ UAudioDataAsset* UBgmSubsystem::GetAudioData() const
 	return ResourceSettings ? ResourceSettings->AudioDataAsset.LoadSynchronous() : nullptr;
 }
 
-UAudioComponent* UBgmSubsystem::CreateBGMComponent(USoundBase* Sound, float Volume)
+UAudioComponent* UBgmSubsystem::CreateBGMComponent(USoundBase* Sound)
 {
 	if (!Sound)
 	{
 		return nullptr;
 	}
 
-	UAudioComponent* AudioComponent = UGameplayStatics::CreateSound2D(this, Sound, Volume, 1.f, 0.f, nullptr, false, true);
+	UAudioComponent* AudioComponent = UGameplayStatics::CreateSound2D(this, Sound, 1.f, 1.f, 0.f, nullptr, false, false);
 	if (AudioComponent)
 	{
 		AudioComponent->bIsUISound = true;
-		AudioComponent->SetVolumeMultiplier(Volume);
+		AudioComponent->SetVolumeMultiplier(1.f);
 	}
 	return AudioComponent;
 }
@@ -161,9 +193,14 @@ void UBgmSubsystem::StartCombatLoop()
 	CurrentCombatRealm = PendingCombatRealm;
 	bCombatLoopStarted = true;
 
-	SurfaceBGMComponent = CreateBGMComponent(AudioData->SurfaceBGM, CurrentCombatRealm == ERealmType::Surface ? 1.f : 0.f);
-	RealmBGMComponent = CreateBGMComponent(AudioData->RealmBGM, CurrentCombatRealm == ERealmType::Realm ? 1.f : 0.f);
+	CombatBGMComponent = CreateBGMComponent(AudioData->CombatBGM);
+	SurfaceBGMComponent = CreateBGMComponent(AudioData->SurfaceBGM);
+	RealmBGMComponent = CreateBGMComponent(AudioData->RealmBGM);
 
+	if (CombatBGMComponent)
+	{
+		CombatBGMComponent->Play();
+	}
 	if (SurfaceBGMComponent)
 	{
 		SurfaceBGMComponent->Play();
@@ -172,6 +209,8 @@ void UBgmSubsystem::StartCombatLoop()
 	{
 		RealmBGMComponent->Play();
 	}
+
+	ApplyCombatMix(0.f);
 }
 
 void UBgmSubsystem::ApplyCombatMix(float FadeTime)
@@ -185,6 +224,70 @@ void UBgmSubsystem::ApplyCombatMix(float FadeTime)
 	if (RealmBGMComponent)
 	{
 		RealmBGMComponent->AdjustVolume(FadeTime, bPlaySurface ? 0.f : 1.f);
+	}
+}
+
+void UBgmSubsystem::ApplyBGMVolume()
+{
+	ApplySoundClassVolumes();
+}
+
+void UBgmSubsystem::ApplySoundClassVolumes()
+{
+	CacheSoundClasses();
+
+	if (CachedBGMSoundClass)
+	{
+		CachedBGMSoundClass->Properties.Volume = OriginalBGMClassVolume * BGMVolume;
+	}
+
+	if (CachedSFXSoundClass)
+	{
+		CachedSFXSoundClass->Properties.Volume = OriginalSFXClassVolume * SFXVolume;
+	}
+}
+
+void UBgmSubsystem::CacheSoundClasses()
+{
+	const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
+	if (!ResourceSettings)
+	{
+		return;
+	}
+
+	if (!CachedBGMSoundClass)
+	{
+		CachedBGMSoundClass = ResourceSettings->BGMSoundClass.LoadSynchronous();
+	}
+
+	if (!CachedSFXSoundClass)
+	{
+		CachedSFXSoundClass = ResourceSettings->SFXSoundClass.LoadSynchronous();
+	}
+
+	if (CachedBGMSoundClass && !bCachedOriginalBGMVolume)
+	{
+		OriginalBGMClassVolume = CachedBGMSoundClass->Properties.Volume;
+		bCachedOriginalBGMVolume = true;
+	}
+
+	if (CachedSFXSoundClass && !bCachedOriginalSFXVolume)
+	{
+		OriginalSFXClassVolume = CachedSFXSoundClass->Properties.Volume;
+		bCachedOriginalSFXVolume = true;
+	}
+}
+
+void UBgmSubsystem::RestoreOriginalSoundClassVolumes()
+{
+	if (CachedBGMSoundClass && bCachedOriginalBGMVolume)
+	{
+		CachedBGMSoundClass->Properties.Volume = OriginalBGMClassVolume;
+	}
+
+	if (CachedSFXSoundClass && bCachedOriginalSFXVolume)
+	{
+		CachedSFXSoundClass->Properties.Volume = OriginalSFXClassVolume;
 	}
 }
 

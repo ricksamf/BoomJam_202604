@@ -7,7 +7,9 @@
 #include "GsSkillBigBall.generated.h"
 
 class URealmRevealerComponent;
+class UAudioComponent;
 class USphereComponent;
+class USoundBase;
 
 /**
  * 技能命中后生成的大球，负责变大表现与里世界揭示。
@@ -59,6 +61,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Skill Big Ball", meta = (ClampMin = 0, Units = "cm"))
 	float CollisionRadius = 64.0f;
 
+	/** 大球出现并进入维持阶段前播放的音效 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Skill Big Ball")
+	TObjectPtr<USoundBase> HoldSound;
+
+	/** 大球开始收缩消失时播放的释放音效 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Skill Big Ball")
+	TObjectPtr<USoundBase> ReleaseSound;
+
 	/** 当前所处阶段 */
 	EPhase Phase = EPhase::Growing;
 
@@ -93,5 +103,12 @@ protected:
 	void EnterPhase(EPhase NewPhase);
 
 private:
+	/** 当前正在播放的维持音效组件，用于收缩或销毁时主动停止 */
+	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent> HoldSoundComponent;
+
+	/** 停止并清理维持音效 */
+	void StopHoldSound();
+
 	static TWeakObjectPtr<AGsSkillBigBall> ActiveInstance;
 };

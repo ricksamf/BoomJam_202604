@@ -15,6 +15,10 @@ class UEGAMEJAM_API UAudioDataAsset : public UPrimaryDataAsset
 	GENERATED_BODY()
 	
 public:
+	/** 战斗时常驻播放的BGM，不随表世界和里世界切换 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="BGM")
+	TObjectPtr<USoundBase> CombatBGM;
+
 	/** 里世界BGM */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="BGM")
 	TObjectPtr<USoundBase> RealmBGM;

@@ -35,6 +35,8 @@ protected:
 	/** Gameplay initialization */
 	virtual void BeginPlay() override;
 
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 public:
 
 	/** Increases the score for the given team */

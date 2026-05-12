@@ -52,6 +52,11 @@ bool AGsPlayer::StartMeleeAttack()
 		return false;
 	}
 
+	if (PlayerResourceData && PlayerResourceData->MeleeSwingSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->MeleeSwingSound, GetActorLocation());
+	}
+
 	UWorld* World = GetWorld();
 	if (!World)
 	{
@@ -266,6 +271,7 @@ void AGsPlayer::PerformMeleeHit()
 	}
 
 	TSet<AActor*> DamagedActors;
+	bool bPlayedMeleeHitSound = false;
 	for (AActor* HitActor : OverlappingActors)
 	{
 		if (!IsValid(HitActor) || HitActor == this)
@@ -284,6 +290,11 @@ void AGsPlayer::PerformMeleeHit()
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow,
 			FString::Printf(TEXT("击中=======%s"), *HitActor->GetName()));
 		}
-		UGameplayStatics::ApplyDamage(HitActor, MeleeDamage, GetController(), this, UDamageType::StaticClass());
+		const float AppliedDamage = UGameplayStatics::ApplyDamage(HitActor, MeleeDamage, GetController(), this, UDamageType::StaticClass());
+		if (!bPlayedMeleeHitSound && AppliedDamage > 0.0f && Cast<AEnemyCharacter>(HitActor) && PlayerResourceData && PlayerResourceData->MeleeHitSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->MeleeHitSound, HitActor->GetActorLocation());
+			bPlayedMeleeHitSound = true;
+		}
 	}
 }

@@ -5,6 +5,7 @@
 #include "Components/SphereComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 #include "Player/Skill/GsSkillBigBall.h"
 
 TWeakObjectPtr<AActor> AGsSkillBall::ActiveSkillPtr;
@@ -48,6 +49,11 @@ void AGsSkillBall::BeginPlay()
 	Super::BeginPlay();
 
 	SetActiveSkill(this);
+
+	if (AttackSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, AttackSound, GetActorLocation());
+	}
 }
 
 void AGsSkillBall::EndPlay(const EEndPlayReason::Type EndPlayReason)

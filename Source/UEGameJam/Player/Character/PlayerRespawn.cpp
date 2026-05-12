@@ -5,6 +5,8 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "Player/Character/GsPlayerResourceDataAsset.h"
 #include "Player/Game/GsLevelStateGameState.h"
 #include "TimerManager.h"
 
@@ -17,6 +19,11 @@ void AGsPlayer::Die()
 
 	bIsDead = true;
 	bResetFirstPersonCameraLocationOnNextUpdate = true;
+
+	if (PlayerResourceData && PlayerResourceData->DeathSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->DeathSound, GetActorLocation());
+	}
 
 	StopSlide(true);
 	if (IsDashing())

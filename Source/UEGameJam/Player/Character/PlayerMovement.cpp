@@ -5,6 +5,8 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InputActionValue.h"
+#include "Kismet/GameplayStatics.h"
+#include "Player/Character/GsPlayerResourceDataAsset.h"
 
 void AGsPlayer::DoMove(float Right, float Forward)
 {
@@ -283,6 +285,11 @@ bool AGsPlayer::StopSlide(bool bForceRestore)
 	bIsSlideInputHeld = false;
 	bIsWaitingToStopSlideWhenCanStand = false;
 	FinishCharacterAction();
+
+	if (PlayerResourceData && PlayerResourceData->SlideReleaseSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->SlideReleaseSound, GetActorLocation());
+	}
 
 	return true;
 }

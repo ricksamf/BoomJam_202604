@@ -9,6 +9,7 @@
 class USphereComponent;
 class UPrimitiveComponent;
 class AGsSkillBigBall;
+class USoundBase;
 
 /**
  * 玩家技能球的基础实现，负责飞行、碰撞与销毁。
@@ -34,6 +35,10 @@ protected:
 	/** 小球命中后生成的大球类，可在蓝图中替换具体表现 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Skill Ball")
 	TSubclassOf<AGsSkillBigBall> ImpactBallClass;
+
+	/** 技能小球生成时播放的攻击音效 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Skill Ball")
+	TObjectPtr<USoundBase> AttackSound;
 
 	/** 技能球开始飞行的位置，用于计算最大飞行距离 */
 	FVector StartLocation = FVector::ZeroVector;

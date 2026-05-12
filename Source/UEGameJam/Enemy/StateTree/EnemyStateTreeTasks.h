@@ -382,11 +382,18 @@ struct FEnemyPistolAimTaskInstanceData
 	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0, ClampMax=1))
 	float FlickerStartRatio = 0.7f;
 
+	/** 开火前多少秒触发 WarningMuzzleFX（Aim 剩余时间 ≤ 该值时一次性 Spawn） */
+	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
+	float WarningLeadTime = 0.5f;
+
 	UPROPERTY()
 	float ElapsedTime = 0.f;
 
 	UPROPERTY()
 	bool bFlickerStarted = false;
+
+	UPROPERTY()
+	bool bWarningSpawned = false;
 };
 
 USTRUCT(meta=(DisplayName="Enemy: Pistol Aim", Category="Enemy|Pistol"))
@@ -455,8 +462,15 @@ struct FEnemyMGWarmupTaskInstanceData
 	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
 	float Duration = 1.25f;
 
+	/** 开火前多少秒触发 WarningMuzzleFX（Warmup 剩余时间 ≤ 该值时一次性 Spawn） */
+	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
+	float WarningLeadTime = 0.5f;
+
 	UPROPERTY()
 	float ElapsedTime = 0.f;
+
+	UPROPERTY()
+	bool bWarningSpawned = false;
 };
 
 USTRUCT(meta=(DisplayName="Enemy: MG Warmup", Category="Enemy|MachineGun"))

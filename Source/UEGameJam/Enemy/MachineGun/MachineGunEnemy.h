@@ -35,6 +35,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
 	void PlayAttackMontage();
 
+	/** 在枪口位置一次性 Spawn DataAsset 里的 WarningMuzzleFX（开火前预警特效） */
+	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
+	void SpawnWarningFX();
+
 	/** 允许/禁止连发期间缓慢跟踪玩家 */
 	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
 	void SetTrackingEnabled(bool bEnabled, AActor* TrackTarget);

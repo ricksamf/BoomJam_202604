@@ -41,6 +41,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Enemy|Pistol")
 	void PlayAttackMontage();
 
+	/** 在枪口位置一次性 Spawn DataAsset 里的 WarningMuzzleFX（开火前预警特效） */
+	UFUNCTION(BlueprintCallable, Category="Enemy|Pistol")
+	void SpawnWarningFX();
+
 	UFUNCTION(BlueprintPure, Category="Enemy|Pistol")
 	FVector GetMuzzleLocation() const;
 

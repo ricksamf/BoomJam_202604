@@ -60,6 +60,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|FX")
 	TObjectPtr<UNiagaraSystem> MuzzleFlashFX;
 
+	/** 开火前的枪口预警 Niagara(Warmup 剩余时间到 WarningLeadTime 时一次性在枪口 Spawn) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|FX")
+	TObjectPtr<UNiagaraSystem> WarningMuzzleFX;
+
 	/** 开火动画 Montage（每次 FireOneBullet 时播一次；留空即不播） */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|Anim")
 	TObjectPtr<UAnimMontage> BurstMontage;

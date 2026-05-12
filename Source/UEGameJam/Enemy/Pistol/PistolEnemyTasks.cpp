@@ -21,6 +21,7 @@ EStateTreeRunStatus FEnemyPistolAimTask::EnterState(FStateTreeExecutionContext& 
 	FInstanceDataType& Data = Context.GetInstanceData(*this);
 	Data.ElapsedTime = 0.f;
 	Data.bFlickerStarted = false;
+	Data.bWarningSpawned = false;
 
 	if (!IsValid(Data.PistolEnemy))
 	{
@@ -49,6 +50,13 @@ EStateTreeRunStatus FEnemyPistolAimTask::Tick(FStateTreeExecutionContext& Contex
 			Data.PistolEnemy->SetLaserFlicker(true);
 			Data.bFlickerStarted = true;
 		}
+	}
+
+	// 剩余时间 ≤ WarningLeadTime 时一次性 Spawn 枪口预警特效
+	if (!Data.bWarningSpawned && Data.ElapsedTime >= (Data.Duration - Data.WarningLeadTime))
+	{
+		Data.PistolEnemy->SpawnWarningFX();
+		Data.bWarningSpawned = true;
 	}
 
 	return (Data.ElapsedTime >= Data.Duration) ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;

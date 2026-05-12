@@ -168,3 +168,18 @@ void AMachineGunEnemy::PlayAttackMontage()
 	}
 	PlayAnimMontage(Data->BurstMontage);
 }
+
+void AMachineGunEnemy::SpawnWarningFX()
+{
+	if (IsDead() || !EnemyData)
+	{
+		return;
+	}
+	const UMachineGunEnemyDataAsset* Data = Cast<UMachineGunEnemyDataAsset>(EnemyData);
+	if (!Data || !Data->WarningMuzzleFX)
+	{
+		return;
+	}
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, Data->WarningMuzzleFX,
+		GetMuzzleLocation(), GetActorForwardVector().Rotation());
+}

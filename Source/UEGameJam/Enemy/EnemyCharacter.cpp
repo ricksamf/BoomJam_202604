@@ -10,8 +10,10 @@
 #include "RealmHurtSwitchComponent.h"
 #include "AIController.h"
 #include "BrainComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
@@ -37,6 +39,17 @@ AEnemyCharacter::AEnemyCharacter()
 	// 都能被自身攻击 Hitbox/子弹触发，伤害是否被吃由 TakeDamage 中按 RealmType 判定。
 	RealmTag = CreateDefaultSubobject<URealmHurtSwitchComponent>(TEXT("RealmTag"));
 	Health   = CreateDefaultSubobject<UEnemyHealthComponent>(TEXT("Health"));
+
+	// 头顶 3D Widget 指示器：Screen 空间,相机自动 billboard,无需 Tick。
+	// Widget Class 由 EnemyData->IndicatorWidgetClass 在 ApplyDataAsset 里注入;
+	// 留空则组件存在但无可视内容,不崩。位置/尺寸蓝图可覆盖。
+	IndicatorWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("IndicatorWidget"));
+	IndicatorWidget->SetupAttachment(GetCapsuleComponent());
+	IndicatorWidget->SetRelativeLocation(FVector(0.f, 0.f, 120.f));
+	IndicatorWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	IndicatorWidget->SetDrawSize(FVector2D(64.f, 64.f));
+	IndicatorWidget->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	IndicatorWidget->SetGenerateOverlapEvents(false);
 
 	AIControllerClass = AAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
@@ -131,6 +144,11 @@ void AEnemyCharacter::ApplyDataAsset()
 	{
 		Move->MaxWalkSpeed = EnemyData->WalkSpeed;
 	}
+
+	if (IndicatorWidget && EnemyData->IndicatorWidgetClass)
+	{
+		IndicatorWidget->SetWidgetClass(EnemyData->IndicatorWidgetClass);
+	}
 }
 
 void AEnemyCharacter::HandleHealthDepleted(UEnemyHealthComponent* /*Src*/)
@@ -180,6 +198,11 @@ void AEnemyCharacter::Die()
 		MeshComp->SetCollisionProfileName(RagdollCollisionProfile);
 		MeshComp->SetSimulatePhysics(true);
 		MeshComp->SetPhysicsBlendWeight(1.f);
+	}
+
+	if (IndicatorWidget)
+	{
+		IndicatorWidget->SetVisibility(false);
 	}
 
 	OnEnemyDeath.Broadcast(this);

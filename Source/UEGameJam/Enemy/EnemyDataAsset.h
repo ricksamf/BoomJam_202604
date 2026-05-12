@@ -12,6 +12,7 @@
 #include "EnemyDataAsset.generated.h"
 
 class UStateTree;
+class UUserWidget;
 
 UCLASS(BlueprintType, Abstract)
 class UEGAMEJAM_API UEnemyDataAsset : public UPrimaryDataAsset
@@ -42,4 +43,8 @@ public:
 	/** 该敌人使用的 StateTree 资产 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="StateTree")
 	TObjectPtr<UStateTree> StateTreeAsset = nullptr;
+
+	/** 敌人头顶 3D Widget（Screen 空间,引擎自动 billboard；留空即不显示图标） */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UI")
+	TSubclassOf<UUserWidget> IndicatorWidgetClass;
 };

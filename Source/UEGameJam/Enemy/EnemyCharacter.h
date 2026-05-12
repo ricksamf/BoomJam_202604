@@ -21,6 +21,7 @@ class URealmTagComponent;
 class UEnemyHealthComponent;
 class UEnemyDataAsset;
 class USoundBase;
+class UWidgetComponent;
 class AEnemyCharacter;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEnemyDeathSignature, AEnemyCharacter*, DeadEnemy);
@@ -87,6 +88,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Enemy|Components")
 	TObjectPtr<UEnemyHealthComponent> Health;
+
+	/** 头顶 3D Widget 指示器（Screen 空间,引擎自动 billboard）。Widget Class 由 EnemyData->IndicatorWidgetClass 在 ApplyDataAsset 里注入。 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Enemy|UI")
+	TObjectPtr<UWidgetComponent> IndicatorWidget;
 
 	UPROPERTY()
 	bool bIsDead = false;

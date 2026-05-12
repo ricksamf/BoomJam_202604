@@ -14,10 +14,10 @@
 
 | 文件 | 类 | 职责 |
 |---|---|---|
-| `EnemyCharacter.h/.cpp` | `AEnemyCharacter` (Abstract) | 基类：构造时把 RealmTag 实例化为 `URealmHurtSwitchComponent`（不切 SetActorEnableCollision，敌人在任何世界都能正常移动）；TakeDamage 按 RealmType 分流——Surface 始终接受、Realm 仅在 HurtSwitch.IsHurtable=true 时接受；`Die()` 做 Ragdoll / 停 AI / 延迟销毁；向 `UEnemySubsystem` 注册/注销；`ApplyDataAsset()` 把 DataAsset 数值拷到运行时 |
+| `EnemyCharacter.h/.cpp` | `AEnemyCharacter` (Abstract) | 基类：构造时把 RealmTag 实例化为 `URealmHurtSwitchComponent`（不切 SetActorEnableCollision，敌人在任何世界都能正常移动）；TakeDamage 按 RealmType 分流——Surface 始终接受、Realm 仅在 HurtSwitch.IsHurtable=true 时接受；`Die()` 做 Ragdoll / 停 AI / 延迟销毁 / 隐藏 IndicatorWidget；向 `UEnemySubsystem` 注册/注销；`ApplyDataAsset()` 把 DataAsset 数值拷到运行时（含 `IndicatorWidgetClass` → `IndicatorWidget->SetWidgetClass`）；挂 `IndicatorWidget`（`UWidgetComponent`，Screen 空间头顶指示器,引擎自动 billboard）|
 | `EnemyAIController.h/.cpp` | `AEnemyAIController` | 挂 `UStateTreeAIComponent`；`OnPossess` 时从 Pawn 的 `EnemyData.StateTreeAsset` 加载并 `StartLogic()`；`FindPlayerByTag` 缓存带 `"Player"` Tag 的玩家 Pawn |
 | `EnemyHealthComponent.h/.cpp` | `UEnemyHealthComponent` | 独立血量组件：MaxHP / CurrentHP / bInvulnerable / `ApplyDamage`；广播 `OnDepleted` / `OnHealthChanged`；**不处理死亡效果**，那是 `AEnemyCharacter::Die` 的活 |
-| `EnemyDataAsset.h/.cpp` | `UEnemyDataAsset` (Abstract) | `UPrimaryDataAsset` 基类：MaxHP / DetectionRadius / LoseSightTimeout / WalkSpeed / ChaseSpeed / StateTreeAsset |
+| `EnemyDataAsset.h/.cpp` | `UEnemyDataAsset` (Abstract) | `UPrimaryDataAsset` 基类：MaxHP / DetectionRadius / LoseSightTimeout / WalkSpeed / ChaseSpeed / StateTreeAsset / IndicatorWidgetClass |
 | `EnemyProjectile.h/.cpp` | `AEnemyProjectile` | 投射物：Sphere + ProjectileMovement + Niagara Trail + RealmTag（RealmTag Tick 被禁，见 §5.6）；Sphere 对 Pawn 通道 = Overlap，对 World 通道 = Block；每帧检测是否跨越当前揭示球边界，跨越则视为命中分界面并销毁；OnHit 处理墙面命中，OnBeginOverlap 处理 Pawn 命中（仅对带 `"Player"` Tag 的 Actor 应用伤害+销毁，其他 Pawn 穿透） |
 | `EnemySubsystem.h/.cpp` | `UEnemySubsystem` | `UWorldSubsystem`：敌人列表；按 Realm / Class 过滤计数；**一次性** `OnAllEnemiesDead` 广播；Exec 命令 `EnemyKillAll` / `EnemyDump` |
 
@@ -92,17 +92,18 @@ UPrimaryDataAsset (UE)
 
 UActorComponent
   ├── UEnemyHealthComponent
-  └── URealmTagComponent (外部)
+  ├── URealmTagComponent (外部)
+  └── UWidgetComponent (引擎自带,用于 IndicatorWidget)
 ```
 
 ### 2.2 生命周期
 
 ```
 Spawn Enemy
-  Ctor: 创建 RealmTag + Health，默认 Ragdoll 配置
+  Ctor: 创建 RealmTag + Health + IndicatorWidget（Screen 空间 UWidgetComponent，胶囊顶 +120），默认 Ragdoll 配置
   PostInitializeComponents: RealmTag->SetRealmType(DefaultRealmType)
   BeginPlay:
-    ApplyDataAsset()       // MaxHP、WalkSpeed、各敌人专属字段
+    ApplyDataAsset()       // MaxHP、WalkSpeed、IndicatorWidgetClass、各敌人专属字段
     Health.OnDepleted → Die
     Subsystem->RegisterEnemy
 
@@ -120,6 +121,7 @@ Enemy.TakeDamage → Health.ApplyDamage → OnDepleted
        Movement.DisableMovement
        Capsule.NoCollision
        Mesh: Ragdoll Profile + SimulatePhysics
+       IndicatorWidget.SetVisibility(false)
        Subsystem.UnregisterEnemy → 若 0 则广播 OnAllEnemiesDead
        SetTimer(DeferredDestructionTime) → Destroy
 
@@ -228,7 +230,7 @@ Warmup 允许中断（丢目标则回 Searching），Burst 不允许（一旦开
 
 | 类 | 字段分组 | 用途 |
 |---|---|---|
-| `UEnemyDataAsset` | MaxHP / DetectionRadius / LoseSightTimeout / WalkSpeed / ChaseSpeed / **StateTreeAsset** | 通用 |
+| `UEnemyDataAsset` | MaxHP / DetectionRadius / LoseSightTimeout / WalkSpeed / ChaseSpeed / **StateTreeAsset** / IndicatorWidgetClass | 通用 |
 | `UMeleeEnemyDataAsset` | AttackRadius / LockOnDuration / DashImpulse / DashDuration / HitboxActiveWindow / SwingDuration / AttackRecovery / MeleeDamage / bPatrol / PatrolRadius / PatrolIdleTime | 近战 |
 | `UPistolEnemyDataAsset` | AimDuration / AimFlickerStartRatio / Cooldown / ProjectileSpeed / ProjectileDamage* / ProjectileClass / LaserNiagara / MuzzleFlashFX / **WarningMuzzleFX** / FireMontage | 手枪 |
 | `UMachineGunEnemyDataAsset` | WarmupDuration / BurstDuration / Cooldown / FireRate / SpreadHalfAngleDeg / TrackingYawSpeed / BulletDamage* / BulletSpeed / ProjectileClass / WarningLasersNiagara / MuzzleFlashFX / **WarningMuzzleFX** / BurstMontage | 机枪 |

@@ -9,6 +9,8 @@
 #include "EnemyDataAsset.h"
 #include "MeleeEnemyDataAsset.generated.h"
 
+class UAnimMontage;
+
 UCLASS(BlueprintType)
 class UEGAMEJAM_API UMeleeEnemyDataAsset : public UEnemyDataAsset
 {
@@ -58,4 +60,8 @@ public:
 	/** 巡逻间隔（到点后等多久再去下一个） */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Melee|Patrol", meta=(ClampMin=0))
 	float PatrolIdleTime = 1.5f;
+
+	/** 挥砍动画 Montage（在 MeleeSwing Task 进入时播一次，留空即不播） */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Melee|Anim")
+	TObjectPtr<UAnimMontage> AttackMontage;
 };

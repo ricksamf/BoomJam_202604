@@ -38,6 +38,10 @@ public:
 	UFUNCTION(BlueprintPure, Category="Enemy|Melee")
 	UCapsuleComponent* GetMeleeHitbox() const { return MeleeHitbox; }
 
+	/** 播放 DataAsset 里配置的 AttackMontage（由 MeleeSwing Task 调用） */
+	UFUNCTION(BlueprintCallable, Category="Enemy|Melee")
+	void PlayAttackMontage();
+
 protected:
 	virtual void BeginPlay() override;
 

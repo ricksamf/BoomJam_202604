@@ -11,6 +11,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "DrawDebugHelpers.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -69,6 +70,22 @@ EStateTreeRunStatus FEnemyAcquireTargetTask::Tick(FStateTreeExecutionContext& Co
 
 	const bool bWasFound = Data.bFound;
 
+	// 调试：每 Tick 画一次视野（有无玩家都画，便于美术调参）
+	if (Data.bDrawDebugCone)
+	{
+		if (UWorld* DebugWorld = Data.Enemy->GetWorld())
+		{
+			const FVector Origin = Data.Enemy->GetActorLocation() + FVector(0.f, 0.f, 60.f);
+			const FVector Forward2D = Data.Enemy->GetActorForwardVector().GetSafeNormal2D();
+			if (!Forward2D.IsNearlyZero())
+			{
+				const float HalfDeg = FMath::Min(Data.DetectionHalfAngleDeg, 180.f);
+				const float HalfRad = FMath::DegreesToRadians(HalfDeg);
+				DrawDebugCone(DebugWorld, Origin, Forward2D, Data.DetectionRadius, HalfRad, HalfRad, 24, FColor::Yellow, false, -1.f, 0, 1.5f);
+			}
+		}
+	}
+
 	AActor* Player = Data.Controller->FindPlayerByTag();
 	if (!Player)
 	{
@@ -93,6 +110,28 @@ EStateTreeRunStatus FEnemyAcquireTargetTask::Tick(FStateTreeExecutionContext& Co
 			PrintEnemyCommonDebug(TEXT("AcquireTarget: LOST (out of radius)"), FColor::Silver);
 		}
 		return EStateTreeRunStatus::Running;
+	}
+
+	// 视野锥判定：2D（yaw-only）。HalfAngle >= 180 时退化为全向。
+	if (Data.DetectionHalfAngleDeg < 180.f)
+	{
+		const FVector Forward2D = Data.Enemy->GetActorForwardVector().GetSafeNormal2D();
+		const FVector ToPlayer2D = (Player->GetActorLocation() - Data.Enemy->GetActorLocation()).GetSafeNormal2D();
+		if (!Forward2D.IsNearlyZero() && !ToPlayer2D.IsNearlyZero())
+		{
+			const float CosHalf = FMath::Cos(FMath::DegreesToRadians(Data.DetectionHalfAngleDeg));
+			if (FVector::DotProduct(Forward2D, ToPlayer2D) < CosHalf)
+			{
+				Data.bFound = false;
+				Data.TargetActor = nullptr;
+				Data.Controller->ClearCachedPlayer();
+				if (bWasFound)
+				{
+					PrintEnemyCommonDebug(TEXT("AcquireTarget: LOST (out of cone)"), FColor::Silver);
+				}
+				return EStateTreeRunStatus::Running;
+			}
+		}
 	}
 
 	if (Data.bRequireLineOfSight)

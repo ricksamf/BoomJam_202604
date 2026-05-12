@@ -10,6 +10,7 @@
 class UBoxComponent;
 class UCameraComponent;
 class UInputComponent;
+class UNiagaraComponent;
 class USkeletalMeshComponent;
 class UGsPlayerResourceDataAsset;
 class AGsGrapplePoint;
@@ -98,8 +99,17 @@ protected:
 	/** 近战命中计时器 */
 	FTimerHandle MeleeHitTimer;
 
+	/** 近战命中顿帧恢复计时器 */
+	FTimerHandle MeleeHitStopTimer;
+
 	/** 死亡后复活计时器 */
 	FTimerHandle RespawnTimer;
+
+	/** 近战顿帧前缓存的全局时间倍率 */
+	float CachedMeleeHitStopTimeDilation = 1.0f;
+
+	/** 当前是否处于近战命中顿帧 */
+	bool bIsMeleeHitStopActive = false;
 
 	/** 起跳后延迟开启墙跑检测的计时器 */
 	FTimerHandle WallRunDetectionDelayTimer;
@@ -203,6 +213,9 @@ protected:
 	/** 进入钩索前缓存的自定义移动模式 */
 	uint8 PreGrappleCustomMovementMode = 0;
 
+	/** 当前钩索绳索 Niagara 组件，用于钩索结束时立刻移除 */
+	TObjectPtr<UNiagaraComponent> ActiveGrappleNiagaraComponent;
+
 	/** 平台边缘攀爬开始时的位置 */
 	FVector LedgeClimbStartLocation = FVector::ZeroVector;
 
@@ -245,6 +258,12 @@ protected:
 	/** 当前墙跑视角已经平滑到的 Roll 值 */
 	float CurrentWallRunCameraRoll = 0.0f;
 
+	/** 是否已经把玩家当前表/里世界状态同步给 BGM 子系统 */
+	bool bHasSyncedBGMRealm = false;
+
+	/** 上一次同步给 BGM 子系统时，玩家是否处于里世界 */
+	bool bLastInsideRealmForBGM = false;
+
 public:
 
 	/** 生命值变化委托，参数为当前生命百分比 */
@@ -278,6 +297,9 @@ protected:
 
 	/** 获取当前玩家手感数值行 */
 	const FGsPlayerTuningRow& GetPlayerTuning() const { return CurrentPlayerTuning ? *CurrentPlayerTuning : DefaultPlayerTuning; }
+
+	/** 根据玩家当前表/里世界状态切换战斗 BGM 混音 */
+	void SyncBGMWithCurrentRealm();
 
 	/** 输入系统回调：处理移动输入 */
 	void MoveInput(const FInputActionValue& Value);
@@ -486,6 +508,12 @@ protected:
 
 	/** 读取近战伤害盒当前重叠对象并对命中目标造成伤害 */
 	void PerformMeleeHit();
+
+	/** 开始近战命中顿帧 */
+	void StartMeleeHitStop();
+
+	/** 结束近战命中顿帧并恢复全局时间倍率 */
+	void FinishMeleeHitStop();
 
 	/** 角色死亡时的统一处理 */
 	void Die();

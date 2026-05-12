@@ -272,6 +272,7 @@ void AGsPlayer::PerformMeleeHit()
 
 	TSet<AActor*> DamagedActors;
 	bool bPlayedMeleeHitSound = false;
+	bool bTriggeredMeleeHitStop = false;
 	for (AActor* HitActor : OverlappingActors)
 	{
 		if (!IsValid(HitActor) || HitActor == this)
@@ -291,10 +292,63 @@ void AGsPlayer::PerformMeleeHit()
 			FString::Printf(TEXT("击中=======%s"), *HitActor->GetName()));
 		}
 		const float AppliedDamage = UGameplayStatics::ApplyDamage(HitActor, MeleeDamage, GetController(), this, UDamageType::StaticClass());
-		if (!bPlayedMeleeHitSound && AppliedDamage > 0.0f && Cast<AEnemyCharacter>(HitActor) && PlayerResourceData && PlayerResourceData->MeleeHitSound)
+		AEnemyCharacter* HitEnemy = Cast<AEnemyCharacter>(HitActor);
+		if (AppliedDamage > 0.0f && HitEnemy)
 		{
-			UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->MeleeHitSound, HitActor->GetActorLocation());
-			bPlayedMeleeHitSound = true;
+			if (!bTriggeredMeleeHitStop)
+			{
+				StartMeleeHitStop();
+				bTriggeredMeleeHitStop = true;
+			}
+
+			if (!bPlayedMeleeHitSound && PlayerResourceData && PlayerResourceData->MeleeHitSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->MeleeHitSound, HitActor->GetActorLocation());
+				bPlayedMeleeHitSound = true;
+			}
 		}
+	}
+}
+
+void AGsPlayer::StartMeleeHitStop()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
+	if (PlayerTuning.MeleeHitStopDuration <= 0.0f || PlayerTuning.MeleeHitStopTimeDilation >= 1.0f)
+	{
+		return;
+	}
+
+	const float HitStopTimeDilation = FMath::Clamp(PlayerTuning.MeleeHitStopTimeDilation, 0.001f, 1.0f);
+	if (!bIsMeleeHitStopActive)
+	{
+		CachedMeleeHitStopTimeDilation = UGameplayStatics::GetGlobalTimeDilation(this);
+		bIsMeleeHitStopActive = true;
+	}
+
+	UGameplayStatics::SetGlobalTimeDilation(this, HitStopTimeDilation);
+
+	const float TimerDuration = FMath::Max(KINDA_SMALL_NUMBER, PlayerTuning.MeleeHitStopDuration * HitStopTimeDilation);
+	World->GetTimerManager().ClearTimer(MeleeHitStopTimer);
+	World->GetTimerManager().SetTimer(MeleeHitStopTimer, this, &AGsPlayer::FinishMeleeHitStop, TimerDuration, false);
+}
+
+void AGsPlayer::FinishMeleeHitStop()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(MeleeHitStopTimer);
+	}
+
+	if (bIsMeleeHitStopActive)
+	{
+		UGameplayStatics::SetGlobalTimeDilation(this, CachedMeleeHitStopTimeDilation);
+		bIsMeleeHitStopActive = false;
+		CachedMeleeHitStopTimeDilation = 1.0f;
 	}
 }

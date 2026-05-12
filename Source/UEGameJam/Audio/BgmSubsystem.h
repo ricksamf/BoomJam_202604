@@ -105,6 +105,7 @@ private:
 	float SFXVolume = 1.f;
 	float OriginalBGMClassVolume = 1.f;
 	float OriginalSFXClassVolume = 1.f;
+	float MutedCombatLayerVolume = 0.01f;
 
 	UAudioDataAsset* GetAudioData() const;
 	UAudioComponent* CreateBGMComponent(USoundBase* Sound);

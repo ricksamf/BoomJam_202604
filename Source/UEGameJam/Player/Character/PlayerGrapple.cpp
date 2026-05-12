@@ -9,6 +9,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Player/Character/GsPlayerResourceDataAsset.h"
 #include "Player/Scene/GsGrapplePoint.h"
 
@@ -80,6 +82,25 @@ void AGsPlayer::DoFalcula()
 	PreGrappleCustomMovementMode = PlayerMovementComponent->CustomMovementMode;
 	LastFalculaTime = CurrentWorldTime;
 	bIsFalculaLaunching = true;
+
+	if (PlayerResourceData && PlayerResourceData->GrappleNiagara)
+	{
+		const FVector GrappleEffectStartLocation = GetActorLocation();
+		ActiveGrappleNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			this,
+			PlayerResourceData->GrappleNiagara,
+			GrappleEffectStartLocation,
+			FRotator::ZeroRotator,
+			FVector::OneVector,
+			true,
+			false);
+		if (ActiveGrappleNiagaraComponent)
+		{
+			ActiveGrappleNiagaraComponent->SetVectorParameter(TEXT("Start"), GrappleEffectStartLocation);
+			ActiveGrappleNiagaraComponent->SetVectorParameter(TEXT("End"), TargetLocation);
+			ActiveGrappleNiagaraComponent->Activate(true);
+		}
+	}
 
 	if (PlayerResourceData && PlayerResourceData->GrappleReleaseSound)
 	{
@@ -171,6 +192,13 @@ void AGsPlayer::AbortGrapple()
 
 void AGsPlayer::ClearGrappleState()
 {
+	if (IsValid(ActiveGrappleNiagaraComponent))
+	{
+		ActiveGrappleNiagaraComponent->DeactivateImmediate();
+		ActiveGrappleNiagaraComponent->DestroyComponent();
+	}
+	ActiveGrappleNiagaraComponent = nullptr;
+
 	bIsFalculaLaunching = false;
 	GrappleDirection = FVector::ForwardVector;
 	GrappleStartLocation = FVector::ZeroVector;

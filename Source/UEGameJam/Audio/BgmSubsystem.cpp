@@ -170,6 +170,8 @@ UAudioComponent* UBgmSubsystem::CreateBGMComponent(USoundBase* Sound)
 		return nullptr;
 	}
 
+	Sound->VirtualizationMode = EVirtualizationMode::PlayWhenSilent;
+
 	UAudioComponent* AudioComponent = UGameplayStatics::CreateSound2D(this, Sound, 1.f, 1.f, 0.f, nullptr, false, false);
 	if (AudioComponent)
 	{
@@ -219,11 +221,11 @@ void UBgmSubsystem::ApplyCombatMix(float FadeTime)
 
 	if (SurfaceBGMComponent)
 	{
-		SurfaceBGMComponent->AdjustVolume(FadeTime, bPlaySurface ? 1.f : 0.f);
+		SurfaceBGMComponent->AdjustVolume(FadeTime, bPlaySurface ? 1.f : MutedCombatLayerVolume);
 	}
 	if (RealmBGMComponent)
 	{
-		RealmBGMComponent->AdjustVolume(FadeTime, bPlaySurface ? 0.f : 1.f);
+		RealmBGMComponent->AdjustVolume(FadeTime, bPlaySurface ? MutedCombatLayerVolume : 1.f);
 	}
 }
 

@@ -19,6 +19,7 @@ void AGsPlayer::Die()
 
 	bIsDead = true;
 	bResetFirstPersonCameraLocationOnNextUpdate = true;
+	FinishMeleeHitStop();
 
 	if (PlayerResourceData && PlayerResourceData->DeathSound)
 	{
@@ -51,6 +52,7 @@ void AGsPlayer::Die()
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().ClearTimer(MeleeHitTimer);
+		World->GetTimerManager().ClearTimer(MeleeHitStopTimer);
 	}
 
 	if (UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement())
@@ -107,8 +109,10 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 	{
 		World->GetTimerManager().ClearTimer(RespawnTimer);
 		World->GetTimerManager().ClearTimer(MeleeHitTimer);
+		World->GetTimerManager().ClearTimer(MeleeHitStopTimer);
 		World->GetTimerManager().ClearTimer(ActionTimer);
 	}
+	FinishMeleeHitStop();
 
 	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
 	CurrentHP = PlayerTuning.MaxHP;

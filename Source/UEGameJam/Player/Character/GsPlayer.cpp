@@ -185,6 +185,7 @@ void AGsPlayer::Tick(float DeltaSeconds)
 	UpdateLedgeClimb(DeltaSeconds);
 	UpdateWallRun(DeltaSeconds);
 	UpdateWallRunDetection();
+	SyncBGMWithCurrentRealm();
 
 	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
 	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
@@ -252,11 +253,13 @@ void AGsPlayer::EndPlay(EEndPlayReason::Type EndPlayReason)
 		ClearDashState();
 	}
 	ResetWallRunDetection();
+	FinishMeleeHitStop();
 
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().ClearTimer(ActionTimer);
 		World->GetTimerManager().ClearTimer(MeleeHitTimer);
+		World->GetTimerManager().ClearTimer(MeleeHitStopTimer);
 		World->GetTimerManager().ClearTimer(RespawnTimer);
 	}
 

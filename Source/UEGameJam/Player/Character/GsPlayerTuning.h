@@ -70,6 +70,14 @@ struct UEGAMEJAM_API FGsPlayerTuningRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Melee", meta = (ClampMin = 0, Units = "s"))
 	float MeleeHitDelay = 0.08f;
 
+	/** 近战打到敌人后触发顿帧的真实体感时长，数值越大停顿越明显 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Melee", meta = (ClampMin = 0, Units = "s"))
+	float MeleeHitStopDuration = 0.04f;
+
+	/** 近战顿帧期间的全局时间倍率，数值越小越接近完全停住 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Melee", meta = (ClampMin = 0.001, ClampMax = 1))
+	float MeleeHitStopTimeDilation = 0.05f;
+
 	/** 旧版技能发射前推距离，当前极简发射逻辑不再使用 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Skill", meta = (ClampMin = 0, Units = "cm"))
 	float SkillSpawnForwardOffset = 100.0f;

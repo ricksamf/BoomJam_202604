@@ -9,6 +9,7 @@
 class AGsSkillBall;
 class UAnimMontage;
 class UInputAction;
+class UNiagaraSystem;
 class USoundBase;
 
 /**
@@ -71,6 +72,10 @@ public:
 	/** 成功释放钩索并开始牵引时播放的音效 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")
 	TObjectPtr<USoundBase> GrappleReleaseSound;
+
+	/** 成功释放钩索时播放的 Niagara 特效，会传入 Start 和 End 参数 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")
+	TObjectPtr<UNiagaraSystem> GrappleNiagara;
 
 	/** 角色死亡时播放的音效 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Health")

@@ -24,6 +24,8 @@ CLAUDE.md
 
 # Millenarysnow
 GenerateBat.bat
+GenerateSln.bat
+Plugins/UnrealBridge/
 
 # Rider
 Plugins/Developer/RiderLink/

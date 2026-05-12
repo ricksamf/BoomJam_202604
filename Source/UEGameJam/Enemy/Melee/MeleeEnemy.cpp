@@ -4,6 +4,7 @@
 
 #include "MeleeEnemy.h"
 #include "MeleeEnemyDataAsset.h"
+#include "Animation/AnimMontage.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/DamageType.h"
@@ -79,6 +80,20 @@ void AMeleeEnemy::SetMeleeHitboxActive(bool bActive)
 	{
 		MeleeHitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+}
+
+void AMeleeEnemy::PlayAttackMontage()
+{
+	if (IsDead())
+	{
+		return;
+	}
+	const UMeleeEnemyDataAsset* Data = Cast<UMeleeEnemyDataAsset>(EnemyData);
+	if (!Data || !Data->AttackMontage)
+	{
+		return;
+	}
+	PlayAnimMontage(Data->AttackMontage);
 }
 
 void AMeleeEnemy::OnMeleeHitboxBeginOverlap(UPrimitiveComponent* /*OverlappedComp*/, AActor* OtherActor,

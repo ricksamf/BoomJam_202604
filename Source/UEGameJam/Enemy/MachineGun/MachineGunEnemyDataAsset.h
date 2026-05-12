@@ -11,6 +11,7 @@
 
 class AEnemyProjectile;
 class UNiagaraSystem;
+class UAnimMontage;
 
 UCLASS(BlueprintType)
 class UEGAMEJAM_API UMachineGunEnemyDataAsset : public UEnemyDataAsset
@@ -58,4 +59,8 @@ public:
 	/** 开火闪光 Niagara */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|FX")
 	TObjectPtr<UNiagaraSystem> MuzzleFlashFX;
+
+	/** 开火动画 Montage（每次 FireOneBullet 时播一次；留空即不播） */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|Anim")
+	TObjectPtr<UAnimMontage> BurstMontage;
 };

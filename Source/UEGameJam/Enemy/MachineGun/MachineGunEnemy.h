@@ -31,6 +31,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
 	void FireOneBullet(const FVector& AimLocation);
 
+	/** 播放 DataAsset 里配置的 BurstMontage（由 FireOneBullet 每颗子弹调用） */
+	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
+	void PlayAttackMontage();
+
 	/** 允许/禁止连发期间缓慢跟踪玩家 */
 	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
 	void SetTrackingEnabled(bool bEnabled, AActor* TrackTarget);

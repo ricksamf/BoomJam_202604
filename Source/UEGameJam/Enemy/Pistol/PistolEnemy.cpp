@@ -5,6 +5,7 @@
 #include "PistolEnemy.h"
 #include "PistolEnemyDataAsset.h"
 #include "EnemyProjectile.h"
+#include "Animation/AnimMontage.h"
 #include "Components/SceneComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
@@ -100,6 +101,8 @@ void APistolEnemy::FireProjectile(const FVector& AimLocation)
 		return;
 	}
 
+	PlayAttackMontage();
+
 	const FVector SpawnLoc = GetMuzzleLocation();
 	FVector Dir = AimLocation - SpawnLoc;
 	if (Dir.IsNearlyZero())
@@ -128,4 +131,18 @@ void APistolEnemy::FireProjectile(const FVector& AimLocation)
 FVector APistolEnemy::GetMuzzleLocation() const
 {
 	return MuzzleComp ? MuzzleComp->GetComponentLocation() : GetActorLocation();
+}
+
+void APistolEnemy::PlayAttackMontage()
+{
+	if (IsDead())
+	{
+		return;
+	}
+	const UPistolEnemyDataAsset* Data = Cast<UPistolEnemyDataAsset>(EnemyData);
+	if (!Data || !Data->FireMontage)
+	{
+		return;
+	}
+	PlayAnimMontage(Data->FireMontage);
 }

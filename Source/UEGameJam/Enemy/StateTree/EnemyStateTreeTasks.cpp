@@ -490,3 +490,31 @@ FText FEnemySetMovementSpeedTask::GetDescription(const FGuid&, FStateTreeDataVie
 	return FText::FromString(TEXT("<b>Set Movement Speed</b>"));
 }
 #endif
+
+////////////////////////////////////////////////////////////////////
+// SetRotationRate
+
+EStateTreeRunStatus FEnemySetRotationRateTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& /*Transition*/) const
+{
+	FInstanceDataType& Data = Context.GetInstanceData(*this);
+	if (!IsValid(Data.Enemy))
+	{
+		PrintEnemyCommonDebug(TEXT("SetRotationRate: FAIL (Enemy is null)"), FColor::Red);
+		return EStateTreeRunStatus::Failed;
+	}
+	if (UCharacterMovementComponent* Move = Data.Enemy->GetCharacterMovement())
+	{
+		FRotator Rate = Move->RotationRate;
+		Rate.Yaw = Data.YawRateDeg;
+		Move->RotationRate = Rate;
+	}
+	PrintEnemyCommonDebug(FString::Printf(TEXT("SetRotationRate: %.0f deg/s"), Data.YawRateDeg), FColor::Silver);
+	return EStateTreeRunStatus::Running;
+}
+
+#if WITH_EDITOR
+FText FEnemySetRotationRateTask::GetDescription(const FGuid&, FStateTreeDataView, const IStateTreeBindingLookup&, EStateTreeNodeFormatting) const
+{
+	return FText::FromString(TEXT("<b>Set Rotation Rate</b>"));
+}
+#endif

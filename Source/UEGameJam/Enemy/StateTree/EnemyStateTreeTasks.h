@@ -285,6 +285,37 @@ struct UEGAMEJAM_API FEnemySetMovementSpeedTask : public FStateTreeTaskCommonBas
 };
 
 ////////////////////////////////////////////////////////////////////
+// SetRotationRate
+
+USTRUCT()
+struct FEnemySetRotationRateTaskInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category="Context")
+	TObjectPtr<AEnemyCharacter> Enemy;
+
+	/** 移动转身速率（度/秒），写入 CharacterMovement.RotationRate.Yaw（bOrientRotationToMovement=true 时生效） */
+	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
+	float YawRateDeg = 540.f;
+};
+
+USTRUCT(meta=(DisplayName="Enemy: Set Rotation Rate", Category="Enemy"))
+struct UEGAMEJAM_API FEnemySetRotationRateTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FEnemySetRotationRateTaskInstanceData;
+	virtual const UStruct* GetInstanceDataType() const override { return FInstanceDataType::StaticStruct(); }
+
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+
+#if WITH_EDITOR
+	virtual FText GetDescription(const FGuid& ID, FStateTreeDataView InstanceDataView, const IStateTreeBindingLookup& BindingLookup, EStateTreeNodeFormatting Formatting = EStateTreeNodeFormatting::Text) const override;
+#endif
+};
+
+////////////////////////////////////////////////////////////////////
 // MeleeDash
 
 USTRUCT()

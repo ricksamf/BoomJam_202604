@@ -50,6 +50,7 @@ Idle / Lockon / Aim / Warmup / Fire / Burst / Recover / Cooldown — 仅作为 `
 | `FEnemyFacePlayerTask` | 朝向玩家 | Tick 用 `RInterpConstantTo` 改 Yaw；从不 Succeed |
 | `FEnemyWaitPhaseTask` | 定时+语义 | 累计时间到 Duration → Succeeded；打印 `"Phase: <Name> (Xs)"` |
 | `FEnemySetMovementSpeedTask` | 切速度 | EnterState 改 `MaxWalkSpeed`（Running 挂住状态） |
+| `FEnemySetRotationRateTask` | 切移动转身速率 | EnterState 改 `CharacterMovement.RotationRate.Yaw`（度/秒，`bOrientRotationToMovement=true` 时生效）。默认由 `AEnemyCharacter` 构造时设 540，想分状态调时挂此 Task |
 
 #### 通用 Condition（`EnemyStateTreeConditions.h/.cpp`）
 

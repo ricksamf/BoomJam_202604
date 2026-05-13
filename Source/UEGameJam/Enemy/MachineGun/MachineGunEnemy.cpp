@@ -7,7 +7,6 @@
 #include "EnemyProjectile.h"
 #include "Animation/AnimMontage.h"
 #include "Components/SceneComponent.h"
-#include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Engine/World.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -20,36 +19,11 @@ AMachineGunEnemy::AMachineGunEnemy()
 
 	MuzzleComp = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
 	MuzzleComp->SetupAttachment(GetMesh());
-
-	WarningLasersFX = CreateDefaultSubobject<UNiagaraComponent>(TEXT("WarningLasersFX"));
-	WarningLasersFX->SetupAttachment(MuzzleComp);
-	WarningLasersFX->bAutoActivate = false;
-}
-
-void AMachineGunEnemy::ApplyDataAsset()
-{
-	Super::ApplyDataAsset();
-	if (const UMachineGunEnemyDataAsset* Data = Cast<UMachineGunEnemyDataAsset>(EnemyData))
-	{
-		if (WarningLasersFX && Data->WarningLasersNiagara)
-		{
-			WarningLasersFX->SetAsset(Data->WarningLasersNiagara);
-		}
-	}
 }
 
 void AMachineGunEnemy::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	// 预警激光持续瞄准
-	if (bWarningActive && WarningLasersFX)
-	{
-		if (AActor* T = CurrentWarningTarget.Get())
-		{
-			WarningLasersFX->SetVariableVec3(FName("BeamEnd"), T->GetActorLocation());
-		}
-	}
 
 	// 连发期间缓慢跟踪
 	if (bTracking)
@@ -74,30 +48,6 @@ void AMachineGunEnemy::Tick(float DeltaSeconds)
 				SetActorRotation(New);
 			}
 		}
-	}
-}
-
-void AMachineGunEnemy::SetWarningLasersActive(bool bActive, AActor* AimTarget)
-{
-	bWarningActive = bActive;
-	CurrentWarningTarget = AimTarget;
-
-	if (!WarningLasersFX)
-	{
-		return;
-	}
-
-	if (bActive)
-	{
-		WarningLasersFX->Activate(true);
-		if (AimTarget)
-		{
-			WarningLasersFX->SetVariableVec3(FName("BeamEnd"), AimTarget->GetActorLocation());
-		}
-	}
-	else
-	{
-		WarningLasersFX->Deactivate();
 	}
 }
 

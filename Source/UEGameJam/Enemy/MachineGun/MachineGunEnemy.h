@@ -1,6 +1,6 @@
 // ===================================================
 // 文件：MachineGunEnemy.h
-// 说明：表世界机枪敌人。Warmup(多激光) → Burst(扇形+跟踪) → Cooldown。
+// 说明：表世界机枪敌人。Warmup → Burst(扇形+跟踪) → Cooldown。
 // ===================================================
 
 #pragma once
@@ -10,7 +10,6 @@
 #include "MachineGunEnemy.generated.h"
 
 class USceneComponent;
-class UNiagaraComponent;
 class UMachineGunEnemyDataAsset;
 
 UCLASS()
@@ -20,12 +19,6 @@ class UEGAMEJAM_API AMachineGunEnemy : public AEnemyCharacter
 
 public:
 	AMachineGunEnemy();
-
-	virtual void ApplyDataAsset() override;
-
-	/** 激活/关闭预警激光 */
-	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
-	void SetWarningLasersActive(bool bActive, AActor* AimTarget);
 
 	/** 发射一发子弹（带扇形散射） */
 	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
@@ -52,17 +45,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Enemy|MG")
 	TObjectPtr<USceneComponent> MuzzleComp;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Enemy|MG")
-	TObjectPtr<UNiagaraComponent> WarningLasersFX;
-
-	UPROPERTY()
-	TWeakObjectPtr<AActor> CurrentWarningTarget;
-
 	UPROPERTY()
 	TWeakObjectPtr<AActor> CurrentTrackTarget;
-
-	UPROPERTY()
-	bool bWarningActive = false;
 
 	UPROPERTY()
 	bool bTracking = false;

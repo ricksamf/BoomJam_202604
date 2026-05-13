@@ -53,10 +53,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG")
 	TSubclassOf<AEnemyProjectile> ProjectileClass;
 
-	/** 预警激光 Niagara（多束汇聚效果，资产层面做） */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|FX")
-	TObjectPtr<UNiagaraSystem> WarningLasersNiagara;
-
 	/** 开火闪光 Niagara */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|FX")
 	TObjectPtr<UNiagaraSystem> MuzzleFlashFX;

@@ -27,7 +27,6 @@ EStateTreeRunStatus FEnemyMGWarmupTask::EnterState(FStateTreeExecutionContext& C
 		return EStateTreeRunStatus::Failed;
 	}
 
-	Data.MGEnemy->SetWarningLasersActive(true, Data.Target);
 	return EStateTreeRunStatus::Running;
 }
 
@@ -45,15 +44,6 @@ EStateTreeRunStatus FEnemyMGWarmupTask::Tick(FStateTreeExecutionContext& Context
 	}
 
 	return (Data.ElapsedTime >= Data.Duration) ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;
-}
-
-void FEnemyMGWarmupTask::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& /*Transition*/) const
-{
-	FInstanceDataType& Data = Context.GetInstanceData(*this);
-	if (IsValid(Data.MGEnemy))
-	{
-		Data.MGEnemy->SetWarningLasersActive(false, nullptr);
-	}
 }
 
 #if WITH_EDITOR

@@ -12,6 +12,7 @@
 class AEnemyProjectile;
 class UNiagaraSystem;
 class UAnimMontage;
+class USoundBase;
 
 UCLASS(BlueprintType)
 class UEGAMEJAM_API UPistolEnemyDataAsset : public UEnemyDataAsset
@@ -22,10 +23,6 @@ public:
 	/** 瞄准阶段时长（策划案 0.8-1.2s） */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol", meta=(ClampMin=0))
 	float AimDuration = 1.f;
-
-	/** 闪烁开始比例（后 30% 闪烁 = 0.7） */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol", meta=(ClampMin=0, ClampMax=1))
-	float AimFlickerStartRatio = 0.7f;
 
 	/** 冷却阶段时长（策划案 1.5-1.8s） */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol", meta=(ClampMin=0))
@@ -43,10 +40,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol")
 	TSubclassOf<AEnemyProjectile> ProjectileClass;
 
-	/** 瞄准激光 Niagara 资产 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|FX")
-	TObjectPtr<UNiagaraSystem> LaserNiagara;
-
 	/** 开火闪光 Niagara */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|FX")
 	TObjectPtr<UNiagaraSystem> MuzzleFlashFX;
@@ -58,4 +51,8 @@ public:
 	/** 开火动画 Montage（在 FireProjectile 时播一次，留空即不播） */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|Anim")
 	TObjectPtr<UAnimMontage> FireMontage;
+
+	/** 开火音效列表（每次开火随机抽一个播放；留空即不播） */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|Audio")
+	TArray<TObjectPtr<USoundBase>> FireSounds;
 };

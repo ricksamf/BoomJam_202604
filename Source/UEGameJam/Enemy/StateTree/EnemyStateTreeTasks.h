@@ -417,19 +417,12 @@ struct FEnemyPistolAimTaskInstanceData
 	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
 	float Duration = 1.f;
 
-	/** 闪烁开始比例 (0-1)，例如 0.7 表示在 70% 时开始闪 */
-	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0, ClampMax=1))
-	float FlickerStartRatio = 0.7f;
-
 	/** 开火前多少秒触发 WarningMuzzleFX（Aim 剩余时间 ≤ 该值时一次性 Spawn） */
 	UPROPERTY(EditAnywhere, Category="Parameter", meta=(ClampMin=0))
 	float WarningLeadTime = 0.5f;
 
 	UPROPERTY()
 	float ElapsedTime = 0.f;
-
-	UPROPERTY()
-	bool bFlickerStarted = false;
 
 	UPROPERTY()
 	bool bWarningSpawned = false;
@@ -447,7 +440,6 @@ struct UEGAMEJAM_API FEnemyPistolAimTask : public FStateTreeTaskCommonBase
 
 	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
 	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
-	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
 
 #if WITH_EDITOR
 	virtual FText GetDescription(const FGuid& ID, FStateTreeDataView InstanceDataView, const IStateTreeBindingLookup& BindingLookup, EStateTreeNodeFormatting Formatting = EStateTreeNodeFormatting::Text) const override;
@@ -524,7 +516,6 @@ struct UEGAMEJAM_API FEnemyMGWarmupTask : public FStateTreeTaskCommonBase
 
 	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
 	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
-	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
 
 #if WITH_EDITOR
 	virtual FText GetDescription(const FGuid& ID, FStateTreeDataView InstanceDataView, const IStateTreeBindingLookup& BindingLookup, EStateTreeNodeFormatting Formatting = EStateTreeNodeFormatting::Text) const override;

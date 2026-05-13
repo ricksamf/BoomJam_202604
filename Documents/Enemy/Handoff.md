@@ -14,7 +14,7 @@
 
 | 文件 | 类 | 职责 |
 |---|---|---|
-| `EnemyCharacter.h/.cpp` | `AEnemyCharacter` (Abstract) | 基类：构造时把 RealmTag 实例化为 `URealmHurtSwitchComponent`（不切 SetActorEnableCollision，敌人在任何世界都能正常移动）；TakeDamage 按 RealmType 分流——Surface 始终接受、Realm 仅在 HurtSwitch.IsHurtable=true 时接受；`Die()` 做 Ragdoll / 停 AI / 延迟销毁 / 隐藏 IndicatorWidget；向 `UEnemySubsystem` 注册/注销；`ApplyDataAsset()` 把 DataAsset 数值拷到运行时（含 `IndicatorWidgetClass` → `IndicatorWidget->SetWidgetClass`）；挂 `IndicatorWidget`（`UWidgetComponent`，Screen 空间头顶指示器,引擎自动 billboard）|
+| `EnemyCharacter.h/.cpp` | `AEnemyCharacter` (Abstract) | 基类：构造时把 RealmTag 实例化为 `URealmHurtSwitchComponent`（不切 SetActorEnableCollision，敌人在任何世界都能正常移动）；TakeDamage 按 RealmType 分流——Surface 始终接受、Realm 仅在 HurtSwitch.IsHurtable=true 时接受；`Die()` 做 Ragdoll / 停 AI / 延迟销毁 / 隐藏 IndicatorWidget / 随机播 `DeathSounds`；向 `UEnemySubsystem` 注册/注销；`ApplyDataAsset()` 把 DataAsset 数值拷到运行时（含 `IndicatorWidgetClass` → `IndicatorWidget->SetWidgetClass`）；挂 `IndicatorWidget`（`UWidgetComponent`，Screen 空间头顶指示器,引擎自动 billboard）；提供 `PlayRandomSound(Array, Loc)` 给子类复用 |
 | `EnemyAIController.h/.cpp` | `AEnemyAIController` | 挂 `UStateTreeAIComponent`；`OnPossess` 时从 Pawn 的 `EnemyData.StateTreeAsset` 加载并 `StartLogic()`；`FindPlayerByTag` 缓存带 `"Player"` Tag 的玩家 Pawn |
 | `EnemyHealthComponent.h/.cpp` | `UEnemyHealthComponent` | 独立血量组件：MaxHP / CurrentHP / bInvulnerable / `ApplyDamage`；广播 `OnDepleted` / `OnHealthChanged`；**不处理死亡效果**，那是 `AEnemyCharacter::Die` 的活 |
 | `EnemyDataAsset.h/.cpp` | `UEnemyDataAsset` (Abstract) | `UPrimaryDataAsset` 基类：MaxHP / DetectionRadius / LoseSightTimeout / WalkSpeed / ChaseSpeed / StateTreeAsset / IndicatorWidgetClass |
@@ -31,8 +31,8 @@
 
 专属行为：
 - **Melee**：Capsule Hitbox（默认 NoCollision，Swing 窗口才开 QueryOnly）；`PerformDash` 用 `LaunchCharacter`；Hitbox 命中用 `AlreadyHitActors` 集合防止一次 Swing 多次触发
-- **Pistol**：MuzzleComp + Niagara Beam (LaserFX)；Tick 每帧把 `BeamEnd` 用户参数刷到玩家位置；`SetLaserFlicker` 设 `FlickerIntensity` 用户参数；`FireProjectile` Spawn AEnemyProjectile 并 Spawn `MuzzleFlashFX`；`SpawnWarningFX()` 在枪口位置一次性 Spawn `WarningMuzzleFX`（由 PistolAim Task 在 Aim 剩余 `WarningLeadTime` 时触发）
-- **MachineGun**：MuzzleComp + Niagara WarningLasersFX；Tick 处理两件事 — 预警激光 BeamEnd 刷新 + Burst 期的缓慢偏航跟踪（`RInterpConstantTo`）；`FireOneBullet` 用 `FMath::VRandCone` 做扇形散射并 Spawn `MuzzleFlashFX`；`SpawnWarningFX()` 在枪口位置一次性 Spawn `WarningMuzzleFX`（由 MGWarmup Task 在 Warmup 剩余 `WarningLeadTime` 时触发）
+- **Pistol**：MuzzleComp（枪口位置）；`FireProjectile` Spawn AEnemyProjectile 并 Spawn `MuzzleFlashFX` + `PlayRandomSound(FireSounds)`；`SpawnWarningFX()` 在枪口位置一次性 Spawn `WarningMuzzleFX`（由 PistolAim Task 在 Aim 剩余 `WarningLeadTime` 时触发）
+- **MachineGun**：MuzzleComp（枪口位置）；Tick 处理 Burst 期的缓慢偏航跟踪（`RInterpConstantTo`）；`FireOneBullet` 用 `FMath::VRandCone` 做扇形散射并 Spawn `MuzzleFlashFX` + `PlayRandomSound(FireSounds)`；`SpawnWarningFX()` 在枪口位置一次性 Spawn `WarningMuzzleFX`（由 MGWarmup Task 在 Warmup 剩余 `WarningLeadTime` 时触发）
 
 ### 1.2 StateTree 层（`Source/UEGameJam/Enemy/StateTree/`）
 
@@ -187,7 +187,7 @@ Root
     │
     ├── Aim
     │   ├── [Task] Face Player
-    │   ├── [Task] Pistol Aim (Duration=1.0, FlickerStartRatio=0.7, WarningLeadTime=0.5)
+    │   ├── [Task] Pistol Aim (Duration=1.0, WarningLeadTime=0.5)
     │   ├── [Transition] → Searching (On Tick, Cond: Has Player Target, bInvert=true)
     │   └── [Transition] → Fire      (On State Completed)
     │
@@ -209,7 +209,7 @@ Root
     │
     ├── Warmup
     │   ├── [Task] Face Player (Yaw 180°/s)
-    │   ├── [Task] MG Warmup   (Duration=1.25, WarningLeadTime=0.5)  // 激光预警 + 开火前枪口预警 FX
+    │   ├── [Task] MG Warmup   (Duration=1.25, WarningLeadTime=0.5)  // 开火前枪口预警 FX
     │   ├── [Transition] → Searching (On Tick, Cond: Has Player Target, bInvert=true)
     │   └── [Transition] → Burst     (On State Completed)
     │
@@ -233,8 +233,8 @@ Warmup 允许中断（丢目标则回 Searching），Burst 不允许（一旦开
 |---|---|---|
 | `UEnemyDataAsset` | MaxHP / DetectionRadius / LoseSightTimeout / WalkSpeed / ChaseSpeed / **StateTreeAsset** / IndicatorWidgetClass | 通用 |
 | `UMeleeEnemyDataAsset` | AttackRadius / LockOnDuration / DashImpulse / DashDuration / HitboxActiveWindow / SwingDuration / AttackRecovery / MeleeDamage / bPatrol / PatrolRadius / PatrolIdleTime | 近战 |
-| `UPistolEnemyDataAsset` | AimDuration / AimFlickerStartRatio / Cooldown / ProjectileSpeed / ProjectileDamage* / ProjectileClass / LaserNiagara / MuzzleFlashFX / **WarningMuzzleFX** / FireMontage | 手枪 |
-| `UMachineGunEnemyDataAsset` | WarmupDuration / BurstDuration / Cooldown / FireRate / SpreadHalfAngleDeg / TrackingYawSpeed / BulletDamage* / BulletSpeed / ProjectileClass / WarningLasersNiagara / MuzzleFlashFX / **WarningMuzzleFX** / BurstMontage | 机枪 |
+| `UPistolEnemyDataAsset` | AimDuration / Cooldown / ProjectileSpeed / ProjectileDamage* / ProjectileClass / MuzzleFlashFX / WarningMuzzleFX / FireMontage / FireSounds | 手枪 |
+| `UMachineGunEnemyDataAsset` | WarmupDuration / BurstDuration / Cooldown / FireRate / SpreadHalfAngleDeg / TrackingYawSpeed / BulletDamage* / BulletSpeed / ProjectileClass / MuzzleFlashFX / WarningMuzzleFX / BurstMontage / FireSounds | 机枪 |
 
 \* `ProjectileDamage` / `BulletDamage` 字段**未被消费**（见 §7.2）。实际伤害读 `AEnemyProjectile::Damage`（子弹蓝图 Class Defaults 里填）。
 
@@ -586,9 +586,10 @@ if (Proj) {
    - FacePlayer 紫
    - WaitPhase 青
    - MeleeDash 橙、MeleeSwing 黄
-6. **Pistol / MG 的 Niagara 资产约定**：
-   - **持续型特效**（`LaserNiagara` / `WarningLasersNiagara`）：绑在 `LaserFX` / `WarningLasersFX` Niagara 组件上，System 必须有 `BeamEnd` 用户参数（Position 或 Vector3），C++ 的 Tick 每帧刷它；Pistol 还需要 `FlickerIntensity` (Float)。拼错名字 C++ `SetVariableVec3` 静默失败。
-   - **一次性特效**（`MuzzleFlashFX` / `WarningMuzzleFX`）：走 `UNiagaraFunctionLibrary::SpawnSystemAtLocation`，每次在枪口位置生成一个独立实例后自毁，不需要 `BeamEnd` 参数。`WarningMuzzleFX` 由 PistolAim / MGWarmup Task 在"剩余时间 ≤ `WarningLeadTime`"时触发一次（默认 0.5s，Task 参数可调）；`MuzzleFlashFX` 由 `FireProjectile` / `FireOneBullet` 每次开火触发一次。
+6. **Pistol / MG 的 Niagara 资产约定**：当前所有特效都走 `UNiagaraFunctionLibrary::SpawnSystemAtLocation`（一次性 Spawn,自毁,无组件常驻）。
+   - `MuzzleFlashFX`：由 `FireProjectile` / `FireOneBullet` 每次开火触发一次,在枪口位置生成。
+   - `WarningMuzzleFX`：由 PistolAim / MGWarmup Task 在"剩余时间 ≤ `WarningLeadTime`"时触发一次（默认 0.5s,Task 参数可调），在枪口位置生成。
+   - 早期版本曾用持续型 Niagara 组件（`LaserFX`/`WarningLasersFX`,需要 `BeamEnd` 用户参数）做瞄准激光预警,该方案已下线,字段、组件、Task 调用全部移除；如要恢复,参考 git 历史 `c3d963e` 之前的版本。
 7. **玩家必须挂 Actor Tag `"Player"`**，三处代码都靠它识别玩家（AIController / Projectile / Melee Hitbox）。
 8. **Realm 系统集成注意**：
    - 敌人本体由基类自动用 `URealmHurtSwitchComponent` 替换默认 RealmTag（不切 SetActorEnableCollision），跨世界规则由基类 `TakeDamage` 按 `RealmType` 处理（见 §5.8）。继承 `AEnemyCharacter` 即可，蓝图无需额外配置。

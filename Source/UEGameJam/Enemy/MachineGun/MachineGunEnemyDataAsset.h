@@ -12,6 +12,7 @@
 class AEnemyProjectile;
 class UNiagaraSystem;
 class UAnimMontage;
+class USoundBase;
 
 UCLASS(BlueprintType)
 class UEGAMEJAM_API UMachineGunEnemyDataAsset : public UEnemyDataAsset
@@ -52,10 +53,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG")
 	TSubclassOf<AEnemyProjectile> ProjectileClass;
 
-	/** 预警激光 Niagara（多束汇聚效果，资产层面做） */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|FX")
-	TObjectPtr<UNiagaraSystem> WarningLasersNiagara;
-
 	/** 开火闪光 Niagara */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|FX")
 	TObjectPtr<UNiagaraSystem> MuzzleFlashFX;
@@ -67,4 +64,8 @@ public:
 	/** 开火动画 Montage（每次 FireOneBullet 时播一次；留空即不播） */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|Anim")
 	TObjectPtr<UAnimMontage> BurstMontage;
+
+	/** 开火音效列表（每颗子弹随机抽一个播放；留空即不播） */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="MG|Audio")
+	TArray<TObjectPtr<USoundBase>> FireSounds;
 };

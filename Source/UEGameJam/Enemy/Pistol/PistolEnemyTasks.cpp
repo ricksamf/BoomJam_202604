@@ -20,7 +20,6 @@ EStateTreeRunStatus FEnemyPistolAimTask::EnterState(FStateTreeExecutionContext& 
 {
 	FInstanceDataType& Data = Context.GetInstanceData(*this);
 	Data.ElapsedTime = 0.f;
-	Data.bFlickerStarted = false;
 	Data.bWarningSpawned = false;
 
 	if (!IsValid(Data.PistolEnemy))
@@ -28,7 +27,6 @@ EStateTreeRunStatus FEnemyPistolAimTask::EnterState(FStateTreeExecutionContext& 
 		return EStateTreeRunStatus::Failed;
 	}
 
-	Data.PistolEnemy->SetLaserActive(true, Data.Target);
 	return EStateTreeRunStatus::Running;
 }
 
@@ -42,16 +40,6 @@ EStateTreeRunStatus FEnemyPistolAimTask::Tick(FStateTreeExecutionContext& Contex
 
 	Data.ElapsedTime += DeltaTime;
 
-	if (!Data.bFlickerStarted && Data.Duration > 0.f)
-	{
-		const float Ratio = Data.ElapsedTime / Data.Duration;
-		if (Ratio >= Data.FlickerStartRatio)
-		{
-			Data.PistolEnemy->SetLaserFlicker(true);
-			Data.bFlickerStarted = true;
-		}
-	}
-
 	// 剩余时间 ≤ WarningLeadTime 时一次性 Spawn 枪口预警特效
 	if (!Data.bWarningSpawned && Data.ElapsedTime >= (Data.Duration - Data.WarningLeadTime))
 	{
@@ -60,16 +48,6 @@ EStateTreeRunStatus FEnemyPistolAimTask::Tick(FStateTreeExecutionContext& Contex
 	}
 
 	return (Data.ElapsedTime >= Data.Duration) ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;
-}
-
-void FEnemyPistolAimTask::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& /*Transition*/) const
-{
-	FInstanceDataType& Data = Context.GetInstanceData(*this);
-	if (IsValid(Data.PistolEnemy))
-	{
-		Data.PistolEnemy->SetLaserFlicker(false);
-		Data.PistolEnemy->SetLaserActive(false, nullptr);
-	}
 }
 
 #if WITH_EDITOR

@@ -23,6 +23,13 @@ void APlayerCharacterController::BeginPlay()
 		return;
 	}
 
+	bShowMouseCursor = false;
+
+	FInputModeGameOnly InputMode;
+	SetInputMode(InputMode);
+	SetIgnoreMoveInput(false);
+	SetIgnoreLookInput(false);
+
 	PlayerUI = CreateWidget<UPlayerUI>(this, PlayerUIClass);
 
 	if (PlayerUI)

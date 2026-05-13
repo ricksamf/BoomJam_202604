@@ -148,6 +148,8 @@ void AMachineGunEnemy::FireOneBullet(const FVector& AimLocation)
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, Data->MuzzleFlashFX, SpawnLoc, Dir.Rotation());
 	}
+
+	PlayRandomSound(Data->FireSounds, SpawnLoc);
 }
 
 FVector AMachineGunEnemy::GetMuzzleLocation() const

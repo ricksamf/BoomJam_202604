@@ -14,7 +14,7 @@
 
 | 文件 | 类 | 职责 |
 |---|---|---|
-| `EnemyCharacter.h/.cpp` | `AEnemyCharacter` (Abstract) | 基类：构造时把 RealmTag 实例化为 `URealmHurtSwitchComponent`（不切 SetActorEnableCollision，敌人在任何世界都能正常移动）；TakeDamage 按 RealmType 分流——Surface 始终接受、Realm 仅在 HurtSwitch.IsHurtable=true 时接受；`Die()` 做 Ragdoll / 停 AI / 延迟销毁 / 隐藏 IndicatorWidget；向 `UEnemySubsystem` 注册/注销；`ApplyDataAsset()` 把 DataAsset 数值拷到运行时（含 `IndicatorWidgetClass` → `IndicatorWidget->SetWidgetClass`）；挂 `IndicatorWidget`（`UWidgetComponent`，Screen 空间头顶指示器,引擎自动 billboard）|
+| `EnemyCharacter.h/.cpp` | `AEnemyCharacter` (Abstract) | 基类：构造时把 RealmTag 实例化为 `URealmHurtSwitchComponent`（不切 SetActorEnableCollision，敌人在任何世界都能正常移动）；TakeDamage 按 RealmType 分流——Surface 始终接受、Realm 仅在 HurtSwitch.IsHurtable=true 时接受；`Die()` 做 Ragdoll / 停 AI / 延迟销毁 / 隐藏 IndicatorWidget / 随机播 `DeathSounds`；向 `UEnemySubsystem` 注册/注销；`ApplyDataAsset()` 把 DataAsset 数值拷到运行时（含 `IndicatorWidgetClass` → `IndicatorWidget->SetWidgetClass`）；挂 `IndicatorWidget`（`UWidgetComponent`，Screen 空间头顶指示器,引擎自动 billboard）；提供 `PlayRandomSound(Array, Loc)` 给子类复用 |
 | `EnemyAIController.h/.cpp` | `AEnemyAIController` | 挂 `UStateTreeAIComponent`；`OnPossess` 时从 Pawn 的 `EnemyData.StateTreeAsset` 加载并 `StartLogic()`；`FindPlayerByTag` 缓存带 `"Player"` Tag 的玩家 Pawn |
 | `EnemyHealthComponent.h/.cpp` | `UEnemyHealthComponent` | 独立血量组件：MaxHP / CurrentHP / bInvulnerable / `ApplyDamage`；广播 `OnDepleted` / `OnHealthChanged`；**不处理死亡效果**，那是 `AEnemyCharacter::Die` 的活 |
 | `EnemyDataAsset.h/.cpp` | `UEnemyDataAsset` (Abstract) | `UPrimaryDataAsset` 基类：MaxHP / DetectionRadius / LoseSightTimeout / WalkSpeed / ChaseSpeed / StateTreeAsset / IndicatorWidgetClass |
@@ -31,8 +31,8 @@
 
 专属行为：
 - **Melee**：Capsule Hitbox（默认 NoCollision，Swing 窗口才开 QueryOnly）；`PerformDash` 用 `LaunchCharacter`；Hitbox 命中用 `AlreadyHitActors` 集合防止一次 Swing 多次触发
-- **Pistol**：MuzzleComp + Niagara Beam (LaserFX)；Tick 每帧把 `BeamEnd` 用户参数刷到玩家位置；`SetLaserFlicker` 设 `FlickerIntensity` 用户参数；`FireProjectile` Spawn AEnemyProjectile 并 Spawn `MuzzleFlashFX`；`SpawnWarningFX()` 在枪口位置一次性 Spawn `WarningMuzzleFX`（由 PistolAim Task 在 Aim 剩余 `WarningLeadTime` 时触发）
-- **MachineGun**：MuzzleComp + Niagara WarningLasersFX；Tick 处理两件事 — 预警激光 BeamEnd 刷新 + Burst 期的缓慢偏航跟踪（`RInterpConstantTo`）；`FireOneBullet` 用 `FMath::VRandCone` 做扇形散射并 Spawn `MuzzleFlashFX`；`SpawnWarningFX()` 在枪口位置一次性 Spawn `WarningMuzzleFX`（由 MGWarmup Task 在 Warmup 剩余 `WarningLeadTime` 时触发）
+- **Pistol**：MuzzleComp + Niagara Beam (LaserFX)；Tick 每帧把 `BeamEnd` 用户参数刷到玩家位置；`SetLaserFlicker` 设 `FlickerIntensity` 用户参数；`FireProjectile` Spawn AEnemyProjectile 并 Spawn `MuzzleFlashFX` + `PlayRandomSound(FireSounds)`；`SpawnWarningFX()` 在枪口位置一次性 Spawn `WarningMuzzleFX`（由 PistolAim Task 在 Aim 剩余 `WarningLeadTime` 时触发）
+- **MachineGun**：MuzzleComp + Niagara WarningLasersFX；Tick 处理两件事 — 预警激光 BeamEnd 刷新 + Burst 期的缓慢偏航跟踪（`RInterpConstantTo`）；`FireOneBullet` 用 `FMath::VRandCone` 做扇形散射并 Spawn `MuzzleFlashFX` + `PlayRandomSound(FireSounds)`；`SpawnWarningFX()` 在枪口位置一次性 Spawn `WarningMuzzleFX`（由 MGWarmup Task 在 Warmup 剩余 `WarningLeadTime` 时触发）
 
 ### 1.2 StateTree 层（`Source/UEGameJam/Enemy/StateTree/`）
 
@@ -233,8 +233,8 @@ Warmup 允许中断（丢目标则回 Searching），Burst 不允许（一旦开
 |---|---|---|
 | `UEnemyDataAsset` | MaxHP / DetectionRadius / LoseSightTimeout / WalkSpeed / ChaseSpeed / **StateTreeAsset** / IndicatorWidgetClass | 通用 |
 | `UMeleeEnemyDataAsset` | AttackRadius / LockOnDuration / DashImpulse / DashDuration / HitboxActiveWindow / SwingDuration / AttackRecovery / MeleeDamage / bPatrol / PatrolRadius / PatrolIdleTime | 近战 |
-| `UPistolEnemyDataAsset` | AimDuration / AimFlickerStartRatio / Cooldown / ProjectileSpeed / ProjectileDamage* / ProjectileClass / LaserNiagara / MuzzleFlashFX / **WarningMuzzleFX** / FireMontage | 手枪 |
-| `UMachineGunEnemyDataAsset` | WarmupDuration / BurstDuration / Cooldown / FireRate / SpreadHalfAngleDeg / TrackingYawSpeed / BulletDamage* / BulletSpeed / ProjectileClass / WarningLasersNiagara / MuzzleFlashFX / **WarningMuzzleFX** / BurstMontage | 机枪 |
+| `UPistolEnemyDataAsset` | AimDuration / AimFlickerStartRatio / Cooldown / ProjectileSpeed / ProjectileDamage* / ProjectileClass / LaserNiagara / MuzzleFlashFX / **WarningMuzzleFX** / FireMontage / **FireSounds** | 手枪 |
+| `UMachineGunEnemyDataAsset` | WarmupDuration / BurstDuration / Cooldown / FireRate / SpreadHalfAngleDeg / TrackingYawSpeed / BulletDamage* / BulletSpeed / ProjectileClass / WarningLasersNiagara / MuzzleFlashFX / **WarningMuzzleFX** / BurstMontage / **FireSounds** | 机枪 |
 
 \* `ProjectileDamage` / `BulletDamage` 字段**未被消费**（见 §7.2）。实际伤害读 `AEnemyProjectile::Damage`（子弹蓝图 Class Defaults 里填）。
 

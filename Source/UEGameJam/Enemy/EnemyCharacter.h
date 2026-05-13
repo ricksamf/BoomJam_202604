@@ -57,9 +57,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Enemy|Death")
 	FName RagdollCollisionProfile = FName("Ragdoll");
 
-	/** 死亡音效（可选） */
+	/** 死亡音效列表（每次死亡随机抽一个播放；留空即不播；只填一个则总播这个） */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Enemy|Death")
-	TObjectPtr<USoundBase> DeathSound;
+	TArray<TObjectPtr<USoundBase>> DeathSounds;
 
 	/** 敌人死亡广播 */
 	UPROPERTY(BlueprintAssignable, Category="Enemy")
@@ -81,6 +81,10 @@ public:
 
 	/** 把 DataAsset 的数值拷到运行时属性（基类处理 MaxHP/WalkSpeed 等），子类可扩展 */
 	virtual void ApplyDataAsset();
+
+	/** 在指定位置随机播放数组中一个 SoundBase（数组空则什么也不播；只填一个则总播这个）。
+	 *  C++ 内部辅助;不暴露蓝图(UFunction 参数不支持 TArray<TObjectPtr<>>)。 */
+	void PlayRandomSound(const TArray<TObjectPtr<USoundBase>>& Sounds, const FVector& Location);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Enemy|Components")

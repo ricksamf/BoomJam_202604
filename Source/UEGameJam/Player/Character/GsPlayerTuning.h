@@ -138,6 +138,10 @@ struct UEGAMEJAM_API FGsPlayerTuningRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera", meta = (ClampMin = 0))
 	float HeadCameraLocationInterpSpeed = 18.0f;
 
+	/** 走出平台边缘后仍允许普通跳跃的宽限时间，数值越大越不容易错过边缘起跳 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Jump", meta = (ClampMin = 0, Units = "s"))
+	float CoyoteJumpTime = 0.2f;
+
 	/** 起跳后延迟多久才开始检测墙跑触发，单位为秒 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Wall Run", meta = (ClampMin = 0, Units = "s"))
 	float WallRunCheckDelay = 0.2f;

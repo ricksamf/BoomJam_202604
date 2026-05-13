@@ -321,10 +321,24 @@ void AGsPlayer::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 Prev
 	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
 	const bool bWasMovingOnGround = PrevMovementMode == MOVE_Walking || PrevMovementMode == MOVE_NavWalking;
 	const bool bIsMovingOnGround = PlayerMovementComponent && PlayerMovementComponent->IsMovingOnGround();
+	const bool bIsFalling = PlayerMovementComponent && PlayerMovementComponent->IsFalling();
 	if (!bWasMovingOnGround && bIsMovingOnGround)
 	{
 		LastGroundedTime = GetWorld() ? GetWorld()->GetTimeSeconds() : LastGroundedTime;
 		bHasJumpedSinceLastGrounded = false;
+	}
+
+	if (bWasMovingOnGround
+		&& bIsFalling
+		&& !bIsDead
+		&& !IsDashing()
+		&& !bIsFalculaLaunching
+		&& !IsLedgeClimbing()
+		&& !IsWallRunning()
+		&& !IsSliding())
+	{
+		ResetWallRunDetection();
+		StartWallRunDetectionDelay();
 	}
 
 	if (!bWasMovingOnGround

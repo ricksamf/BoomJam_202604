@@ -37,7 +37,6 @@ void AGsPlayer::DoJumpStart()
 
 	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
 	const bool bWasMovingOnGround = PlayerMovementComponent && PlayerMovementComponent->IsMovingOnGround();
-	const bool bWillUseCoyoteJump = !bWasMovingOnGround && CanUseCoyoteJump();
 
 	if (IsDashing() || bIsFalculaLaunching || IsLedgeClimbing())
 	{
@@ -58,25 +57,10 @@ void AGsPlayer::DoJumpStart()
 		}
 	}
 
-	if (bWillUseCoyoteJump)
-	{
-		PlayerMovementComponent->SetMovementMode(MOVE_Falling);
-		PlayerMovementComponent->Velocity.Z = PlayerMovementComponent->JumpZVelocity;
-		StopJumping();
-
-		LastGroundedTime = -BIG_NUMBER;
-		bHasJumpedSinceLastGrounded = true;
-		ResetWallRunDetection();
-		StartWallRunDetectionDelay();
-		return;
-	}
-
 	Jump();
 
 	if (bWasMovingOnGround)
 	{
-		LastGroundedTime = -BIG_NUMBER;
-		bHasJumpedSinceLastGrounded = true;
 		ResetWallRunDetection();
 		StartWallRunDetectionDelay();
 	}

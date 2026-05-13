@@ -168,12 +168,6 @@ protected:
 	/** 自上次落地以来是否已经完成过一次空中冲刺 */
 	bool bHasDashedSinceLanded = false;
 
-	/** 最近一次仍被判定站在可行走地面上的世界时间，用于平台边缘宽限跳跃 */
-	float LastGroundedTime = -BIG_NUMBER;
-
-	/** 本次离地是否已经使用过普通跳跃，避免宽限跳跃变成二段跳 */
-	bool bHasJumpedSinceLastGrounded = false;
-
 	/** 最近一次安全落地点位置 */
 	FVector LastSafeLocation = FVector::ZeroVector;
 
@@ -297,7 +291,6 @@ protected:
 	virtual void Landed(const FHitResult& Hit) override;
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
 	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
-	virtual bool CanJumpInternal_Implementation() const override;
 
 	/** 从 DataTable 应用玩家手感数值，未配置时使用 C++ 默认数值 */
 	void ApplyPlayerTuningFromDataTable();
@@ -313,9 +306,6 @@ protected:
 
 	/** 输入系统回调：处理视角输入 */
 	void LookInput(const FInputActionValue& Value);
-
-	/** 当前是否处于平台边缘宽限跳跃窗口 */
-	bool CanUseCoyoteJump() const;
 
 public:
 

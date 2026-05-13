@@ -87,8 +87,6 @@ void AGsPlayer::BeginPlay()
 	LastDashTime = -PlayerTuning.DashCooldown;
 	LastFalculaTime = -PlayerTuning.GrappleCooldown;
 	LastSkillCastTime = -PlayerTuning.SkillCooldown;
-	LastGroundedTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
-	bHasJumpedSinceLastGrounded = false;
 	bIsFalculaLaunching = false;
 	ResetWallRunDetection();
 
@@ -190,11 +188,6 @@ void AGsPlayer::Tick(float DeltaSeconds)
 	SyncBGMWithCurrentRealm();
 
 	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
-	if (PlayerMovementComponent && PlayerMovementComponent->IsMovingOnGround())
-	{
-		LastGroundedTime = GetWorld() ? GetWorld()->GetTimeSeconds() : LastGroundedTime;
-	}
-
 	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
 	if (PlayerMovementComponent
 		&& PlayerMovementComponent->IsFalling()
@@ -309,8 +302,6 @@ void AGsPlayer::Landed(const FHitResult& Hit)
 	bHasDashedSinceLanded = false;
 	ClearGrappleState();
 	ResetWallRunDetection();
-	LastGroundedTime = GetWorld() ? GetWorld()->GetTimeSeconds() : LastGroundedTime;
-	bHasJumpedSinceLastGrounded = false;
 	UpdateSafeLandingTransform();
 }
 
@@ -320,29 +311,9 @@ void AGsPlayer::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 Prev
 
 	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
 	const bool bWasMovingOnGround = PrevMovementMode == MOVE_Walking || PrevMovementMode == MOVE_NavWalking;
-	const bool bIsMovingOnGround = PlayerMovementComponent && PlayerMovementComponent->IsMovingOnGround();
-	const bool bIsFalling = PlayerMovementComponent && PlayerMovementComponent->IsFalling();
-	if (!bWasMovingOnGround && bIsMovingOnGround)
-	{
-		LastGroundedTime = GetWorld() ? GetWorld()->GetTimeSeconds() : LastGroundedTime;
-		bHasJumpedSinceLastGrounded = false;
-	}
-
-	if (bWasMovingOnGround
-		&& bIsFalling
-		&& !bIsDead
-		&& !IsDashing()
-		&& !bIsFalculaLaunching
-		&& !IsLedgeClimbing()
-		&& !IsWallRunning()
-		&& !IsSliding())
-	{
-		ResetWallRunDetection();
-		StartWallRunDetectionDelay();
-	}
-
 	if (!bWasMovingOnGround
-		&& bIsMovingOnGround
+		&& PlayerMovementComponent
+		&& PlayerMovementComponent->IsMovingOnGround()
 		&& !bIsDead
 		&& bIsSlideInputHeld
 		&& !bIsFalculaLaunching
@@ -351,42 +322,6 @@ void AGsPlayer::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 Prev
 	{
 		StartSlide();
 	}
-}
-
-bool AGsPlayer::CanJumpInternal_Implementation() const
-{
-	return Super::CanJumpInternal_Implementation() || CanUseCoyoteJump();
-}
-
-bool AGsPlayer::CanUseCoyoteJump() const
-{
-	const UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
-	if (bIsDead
-		|| !PlayerMovementComponent
-		|| !PlayerMovementComponent->IsFalling()
-		|| bHasJumpedSinceLastGrounded
-		|| IsDashing()
-		|| bIsFalculaLaunching
-		|| IsLedgeClimbing()
-		|| IsWallRunning()
-		|| IsSliding())
-	{
-		return false;
-	}
-
-	const float CoyoteJumpTime = GetPlayerTuning().CoyoteJumpTime;
-	if (CoyoteJumpTime <= KINDA_SMALL_NUMBER)
-	{
-		return false;
-	}
-
-	const UWorld* World = GetWorld();
-	if (!World)
-	{
-		return false;
-	}
-
-	return (World->GetTimeSeconds() - LastGroundedTime) <= CoyoteJumpTime;
 }
 
 void AGsPlayer::MoveInput(const FInputActionValue& Value)

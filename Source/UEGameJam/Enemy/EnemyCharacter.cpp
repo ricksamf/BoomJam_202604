@@ -164,9 +164,9 @@ void AEnemyCharacter::Die()
 	}
 	bIsDead = true;
 
-	if (DeathSound)
+	if (DeathSounds.Num() > 0)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation());
+		PlayRandomSound(DeathSounds, GetActorLocation());
 	}
 
 	// 停 AI
@@ -222,4 +222,17 @@ void AEnemyCharacter::Die()
 void AEnemyCharacter::DeferredDestruction()
 {
 	Destroy();
+}
+
+void AEnemyCharacter::PlayRandomSound(const TArray<TObjectPtr<USoundBase>>& Sounds, const FVector& Location)
+{
+	if (Sounds.Num() == 0)
+	{
+		return;
+	}
+	const int32 Idx = FMath::RandRange(0, Sounds.Num() - 1);
+	if (USoundBase* Pick = Sounds[Idx])
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Pick, Location);
+	}
 }

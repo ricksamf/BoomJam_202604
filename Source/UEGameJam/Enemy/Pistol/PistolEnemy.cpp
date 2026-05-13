@@ -126,6 +126,8 @@ void APistolEnemy::FireProjectile(const FVector& AimLocation)
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, Data->MuzzleFlashFX, SpawnLoc, Dir.Rotation());
 	}
+
+	PlayRandomSound(Data->FireSounds, SpawnLoc);
 }
 
 FVector APistolEnemy::GetMuzzleLocation() const

@@ -12,6 +12,7 @@
 class AEnemyProjectile;
 class UNiagaraSystem;
 class UAnimMontage;
+class USoundBase;
 
 UCLASS(BlueprintType)
 class UEGAMEJAM_API UPistolEnemyDataAsset : public UEnemyDataAsset
@@ -58,4 +59,8 @@ public:
 	/** 开火动画 Montage（在 FireProjectile 时播一次，留空即不播） */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|Anim")
 	TObjectPtr<UAnimMontage> FireMontage;
+
+	/** 开火音效列表（每次开火随机抽一个播放；留空即不播） */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|Audio")
+	TArray<TObjectPtr<USoundBase>> FireSounds;
 };

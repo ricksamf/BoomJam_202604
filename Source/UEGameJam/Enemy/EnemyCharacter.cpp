@@ -6,7 +6,6 @@
 #include "EnemyHealthComponent.h"
 #include "EnemyDataAsset.h"
 #include "EnemySubsystem.h"
-#include "EnemyRespawnSubsystem.h"
 #include "RealmTagComponent.h"
 #include "RealmHurtSwitchComponent.h"
 #include "AIController.h"
@@ -80,11 +79,6 @@ void AEnemyCharacter::BeginPlay()
 	if (UEnemySubsystem* Sub = UEnemySubsystem::Get(this))
 	{
 		Sub->RegisterEnemy(this);
-	}
-
-	if (UEnemyRespawnSubsystem* RS = UEnemyRespawnSubsystem::Get(this))
-	{
-		RS->RegisterEnemy(this, RespawnRecordId);
 	}
 }
 
@@ -216,11 +210,6 @@ void AEnemyCharacter::Die()
 	if (UEnemySubsystem* Sub = UEnemySubsystem::Get(this))
 	{
 		Sub->UnregisterEnemy(this);
-	}
-
-	if (UEnemyRespawnSubsystem* RS = UEnemyRespawnSubsystem::Get(this))
-	{
-		RS->MarkDead(RespawnRecordId);
 	}
 
 	if (UWorld* World = GetWorld())

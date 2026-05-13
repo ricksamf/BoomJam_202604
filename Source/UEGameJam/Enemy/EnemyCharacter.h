@@ -61,6 +61,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Enemy|Death")
 	TArray<TObjectPtr<USoundBase>> DeathSounds;
 
+	/** 重生归属 Checkpoint 编号。复活规则：玩家死亡后，仅当本字段 **严格大于** 玩家当前 CheckpointIndex 时复活。
+	 *  -1 = 让 RespawnSubsystem 在 BeginPlay 阶段按"距离最近的 RespawnPoint"自动推断；想精确控制就在编辑器细节面板里填正数。
+	 *  典型用法：把 Boss/特殊敌设成下一个段的 Checkpoint 编号，让玩家在当前段死亡不会让 Boss 复活。 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Respawn")
+	int32 OwningCheckpointOverride = -1;
+
+	/** RespawnSubsystem 分配的稳定 ID。运行时字段，序列化忽略，重生流程会预设。 */
+	UPROPERTY(Transient, BlueprintReadOnly, Category="Enemy|Respawn")
+	int32 RespawnRecordId = -1;
+
+	UFUNCTION(BlueprintCallable, Category="Enemy|Respawn")
+	void SetRespawnRecordId(int32 NewId) { RespawnRecordId = NewId; }
+
 	/** 敌人死亡广播 */
 	UPROPERTY(BlueprintAssignable, Category="Enemy")
 	FEnemyDeathSignature OnEnemyDeath;

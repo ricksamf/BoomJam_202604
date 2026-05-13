@@ -24,10 +24,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol", meta=(ClampMin=0))
 	float AimDuration = 1.f;
 
-	/** 闪烁开始比例（后 30% 闪烁 = 0.7） */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol", meta=(ClampMin=0, ClampMax=1))
-	float AimFlickerStartRatio = 0.7f;
-
 	/** 冷却阶段时长（策划案 1.5-1.8s） */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol", meta=(ClampMin=0))
 	float Cooldown = 1.6f;
@@ -43,10 +39,6 @@ public:
 	/** 子弹类 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol")
 	TSubclassOf<AEnemyProjectile> ProjectileClass;
-
-	/** 瞄准激光 Niagara 资产 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|FX")
-	TObjectPtr<UNiagaraSystem> LaserNiagara;
 
 	/** 开火闪光 Niagara */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|FX")

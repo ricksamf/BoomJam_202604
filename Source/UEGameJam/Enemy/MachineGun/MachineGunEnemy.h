@@ -9,8 +9,8 @@
 #include "EnemyCharacter.h"
 #include "MachineGunEnemy.generated.h"
 
-class USceneComponent;
 class UMachineGunEnemyDataAsset;
+class UEnemyWeaponComponent;
 
 UCLASS()
 class UEGAMEJAM_API AMachineGunEnemy : public AEnemyCharacter
@@ -19,6 +19,8 @@ class UEGAMEJAM_API AMachineGunEnemy : public AEnemyCharacter
 
 public:
 	AMachineGunEnemy();
+
+	virtual void ApplyDataAsset() override;
 
 	/** 发射一发子弹（带扇形散射） */
 	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
@@ -49,8 +51,9 @@ protected:
 	/** Notify 接管开火:Burst 期间循环 Montage 每圈触发 NotifyName="Fire" → spawn 一发子弹 */
 	virtual void HandleFireNotify() override;
 
+	/** 武器组件,attach 到 SK 的 Weapon_Attach_R socket;mesh / 偏移 / 枪口 socket 由 DataAsset 配置 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Enemy|MG")
-	TObjectPtr<USceneComponent> MuzzleComp;
+	TObjectPtr<UEnemyWeaponComponent> Weapon;
 
 	UPROPERTY()
 	TWeakObjectPtr<AActor> CurrentTrackTarget;

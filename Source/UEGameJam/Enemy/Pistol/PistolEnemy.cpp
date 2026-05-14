@@ -6,8 +6,9 @@
 #include "PistolEnemyDataAsset.h"
 #include "EnemyAIController.h"
 #include "EnemyProjectile.h"
+#include "EnemyWeaponComponent.h"
 #include "Animation/AnimMontage.h"
-#include "Components/SceneComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Engine/World.h"
 
@@ -17,8 +18,30 @@ APistolEnemy::APistolEnemy()
 
 	DefaultRealmType = ERealmType::Surface;
 
-	MuzzleComp = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
-	MuzzleComp->SetupAttachment(GetMesh());
+	Weapon = CreateDefaultSubobject<UEnemyWeaponComponent>(TEXT("Weapon"));
+	Weapon->SetupAttachment(GetMesh(), TEXT("Weapon_Attach_R"));
+}
+
+void APistolEnemy::ApplyDataAsset()
+{
+	Super::ApplyDataAsset();
+
+	if (!Weapon)
+	{
+		return;
+	}
+
+	const UPistolEnemyDataAsset* Data = Cast<UPistolEnemyDataAsset>(EnemyData);
+	if (!Data)
+	{
+		Weapon->SetStaticMesh(nullptr);
+		return;
+	}
+
+	Weapon->SetStaticMesh(Data->WeaponMesh);
+	Weapon->SetRelativeTransform(Data->WeaponAttachTransform);
+	Weapon->MuzzleSocketName = Data->WeaponMuzzleSocket;
+	Weapon->MuzzleLocalOffset = Data->WeaponMuzzleLocalOffset;
 }
 
 void APistolEnemy::FireProjectile(const FVector& AimLocation)
@@ -62,7 +85,7 @@ void APistolEnemy::FireProjectile(const FVector& AimLocation)
 
 FVector APistolEnemy::GetMuzzleLocation() const
 {
-	return MuzzleComp ? MuzzleComp->GetComponentLocation() : GetActorLocation();
+	return Weapon ? Weapon->GetMuzzleLocation() : GetActorLocation();
 }
 
 void APistolEnemy::PlayAttackMontage()
@@ -90,8 +113,10 @@ void APistolEnemy::SpawnWarningFX()
 	{
 		return;
 	}
+	const FVector MuzzleLoc = GetMuzzleLocation();
+	const FVector MuzzleDir = Weapon ? Weapon->GetMuzzleForward() : GetActorForwardVector();
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, Data->WarningMuzzleFX,
-		GetMuzzleLocation(), GetActorForwardVector().Rotation());
+		MuzzleLoc, MuzzleDir.Rotation());
 }
 
 void APistolEnemy::HandleFireNotify()

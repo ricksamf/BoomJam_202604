@@ -12,6 +12,7 @@
 class AEnemyProjectile;
 class UNiagaraSystem;
 class UAnimMontage;
+class UStaticMesh;
 class USoundBase;
 
 UCLASS(BlueprintType)
@@ -55,4 +56,20 @@ public:
 	/** 开火音效列表（每次开火随机抽一个播放；留空即不播） */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|Audio")
 	TArray<TObjectPtr<USoundBase>> FireSounds;
+
+	/** 武器 mesh,会被 attach 到 SK 的 Weapon_Attach_R socket(留空则手上无武器) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|Weapon")
+	TObjectPtr<UStaticMesh> WeaponMesh;
+
+	/** 武器 attach 后的本地变换微调(socket 上枪角度/位置不对时用) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|Weapon")
+	FTransform WeaponAttachTransform;
+
+	/** 武器 mesh 上的枪口 socket 名,不存在时退回 WeaponMuzzleLocalOffset */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|Weapon")
+	FName WeaponMuzzleSocket = FName("Muzzle");
+
+	/** Muzzle socket 不存在时的本地偏移(组件本地空间,常见 X 前向) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pistol|Weapon")
+	FVector WeaponMuzzleLocalOffset = FVector(50.f, 0.f, 0.f);
 };

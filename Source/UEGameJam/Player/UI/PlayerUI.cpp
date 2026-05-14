@@ -2,7 +2,7 @@
 
 #include "PlayerUI.h"
 #include "Components/ProgressBar.h"
-#include "Components/TextBlock.h"
+#include "Components/Widget.h"
 #include "Player/Character/GsPlayer.h"
 
 void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
@@ -14,7 +14,7 @@ void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 	}
 
 	BoundPlayer = InPlayer;
-	SetDieTextVisible(false);
+	SetDeathWidgetVisible(false);
 	UpdateSkillCooldown();
 
 	if (!BoundPlayer)
@@ -52,19 +52,19 @@ void UPlayerUI::NativeDestruct()
 
 void UPlayerUI::HandlePlayerDeath()
 {
-	SetDieTextVisible(true);
+	SetDeathWidgetVisible(true);
 }
 
 void UPlayerUI::HandlePlayerRespawn()
 {
-	SetDieTextVisible(false);
+	SetDeathWidgetVisible(false);
 }
 
-void UPlayerUI::SetDieTextVisible(bool bVisible)
+void UPlayerUI::SetDeathWidgetVisible(bool bVisible)
 {
-	if (DieText)
+	if (DeathWidget)
 	{
-		DieText->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		DeathWidget->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 }
 

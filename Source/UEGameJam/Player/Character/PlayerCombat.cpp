@@ -21,6 +21,11 @@
 
 void AGsPlayer::DoSkill()
 {
+	if (bIsDead)
+	{
+		return;
+	}
+
 	BP_OnSkillInput();
 	StartSkillCast();
 }
@@ -32,7 +37,19 @@ bool AGsPlayer::StartMeleeAttack()
 		return false;
 	}
 
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	const float CurrentWorldTime = World->GetTimeSeconds();
 	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
+	if ((CurrentWorldTime - LastMeleeAttackTime) < PlayerTuning.MeleeCooldown)
+	{
+		return false;
+	}
+
 	float ActionDuration = PlayerTuning.MeleeFallbackDuration;
 
 	if (USkeletalMeshComponent* PlayerMesh = GetFirstPersonArmsMeshComponent())
@@ -52,16 +69,7 @@ bool AGsPlayer::StartMeleeAttack()
 		return false;
 	}
 
-	if (PlayerResourceData && PlayerResourceData->MeleeSwingSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->MeleeSwingSound, GetActorLocation());
-	}
-
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return true;
-	}
+	LastMeleeAttackTime = CurrentWorldTime;
 
 	World->GetTimerManager().ClearTimer(MeleeHitTimer);
 

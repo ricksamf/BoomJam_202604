@@ -62,6 +62,10 @@ struct UEGAMEJAM_API FGsPlayerTuningRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Melee", meta = (ClampMin = 0))
 	float MeleeDamage = 100.0f;
 
+	/** 两次近战攻击之间的冷却时间，数值越大连续挥刀间隔越久 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Melee", meta = (ClampMin = 0, Units = "s"))
+	float MeleeCooldown = 1.0f;
+
 	/** 没有成功播放攻击蒙太奇时，近战动作锁定的备用时长 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Melee", meta = (ClampMin = 0, Units = "s"))
 	float MeleeFallbackDuration = 0.35f;
@@ -121,6 +125,18 @@ struct UEGAMEJAM_API FGsPlayerTuningRow : public FTableRowBase
 	/** 水平移动速度达到这个值时视为跑起来，单位为厘米每秒 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera", meta = (ClampMin = 0, Units = "cm/s"))
 	float RunFOVSpeedThreshold = 450.0f;
+
+	/** 水平移动速度低于这个值时不会播放脚步声 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement", meta = (ClampMin = 0, Units = "cm/s"))
+	float FootstepMinSpeed = 10.0f;
+
+	/** 普通地面移动时两次脚步声之间的间隔 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement", meta = (ClampMin = 0, Units = "s"))
+	float FootstepWalkInterval = 0.42f;
+
+	/** 墙跑时两次脚步声之间的间隔 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement", meta = (ClampMin = 0, Units = "s"))
+	float FootstepWallRunInterval = 0.28f;
 
 	/** 相机 FOV 向目标值过渡的速度，数值越大变化越快 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera", meta = (ClampMin = 0))
@@ -198,7 +214,7 @@ struct UEGAMEJAM_API FGsPlayerTuningRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Health", meta = (ClampMin = 0))
 	float MaxHP = 500.0f;
 
-	/** 死亡后延时复活的时间，留 0 表示立即复活 */
+	/** 已废弃：死亡复活现在由 RespawnAction 确认，不再使用延时自动复活 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Health", meta = (ClampMin = 0, Units = "s"))
 	float DeferredDestructionTime = 5.0f;
 };

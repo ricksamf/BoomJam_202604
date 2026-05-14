@@ -4,7 +4,7 @@
 
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/PlayerController.h"
+#include "GameFramework/Controller.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/Character/GsPlayerResourceDataAsset.h"
 #include "Player/Game/GsLevelStateGameState.h"
@@ -18,6 +18,9 @@ void AGsPlayer::Die()
 	}
 
 	bIsDead = true;
+	bIsWaitingForRespawnInput = true;
+	bIsDeathTimeDilationActive = true;
+	DeathTimeDilationElapsed = 0.0f;
 	bResetFirstPersonCameraLocationOnNextUpdate = true;
 	FinishMeleeHitStop();
 
@@ -25,6 +28,7 @@ void AGsPlayer::Die()
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->DeathSound, GetActorLocation());
 	}
+	UGameplayStatics::SetGlobalTimeDilation(this, 1.0f);
 
 	StopSlide(true);
 	if (IsDashing())
@@ -62,27 +66,9 @@ void AGsPlayer::Die()
 		PlayerMovementComponent->DisableMovement();
 	}
 
-	DisableInput(Cast<APlayerController>(GetController()));
 	OnDamaged.Broadcast(0.0f);
 	OnDeath.Broadcast();
 	BP_OnDeath();
-
-	const float RespawnDelay = GetPlayerTuning().DeferredDestructionTime;
-	if (RespawnDelay <= 0.0f)
-	{
-		RespawnFromCheckpoint();
-		return;
-	}
-
-	if (UWorld* World = GetWorld())
-	{
-		World->GetTimerManager().SetTimer(RespawnTimer, this, &AGsPlayer::OnRespawnTimerElapsed, RespawnDelay, false);
-	}
-}
-
-void AGsPlayer::OnRespawnTimerElapsed()
-{
-	RespawnFromCheckpoint();
 }
 
 void AGsPlayer::RespawnFromCheckpoint()
@@ -107,7 +93,6 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 {
 	if (UWorld* World = GetWorld())
 	{
-		World->GetTimerManager().ClearTimer(RespawnTimer);
 		World->GetTimerManager().ClearTimer(MeleeHitTimer);
 		World->GetTimerManager().ClearTimer(MeleeHitStopTimer);
 		World->GetTimerManager().ClearTimer(ActionTimer);
@@ -117,6 +102,9 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
 	CurrentHP = PlayerTuning.MaxHP;
 	bIsDead = false;
+	bIsWaitingForRespawnInput = false;
+	bIsDeathTimeDilationActive = false;
+	DeathTimeDilationElapsed = 0.0f;
 	CurrentAction = EUEGameJamPlayerAction::None;
 	CachedMoveInput = FVector2D::ZeroVector;
 	bIsSlideInputHeld = false;
@@ -141,6 +129,7 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 	if (UWorld* World = GetWorld())
 	{
 		const float CurrentWorldTime = World->GetTimeSeconds();
+		LastMeleeAttackTime = CurrentWorldTime - PlayerTuning.MeleeCooldown;
 		LastDashTime = CurrentWorldTime - PlayerTuning.DashCooldown;
 		LastFalculaTime = CurrentWorldTime - PlayerTuning.GrappleCooldown;
 		LastSkillCastTime = CurrentWorldTime - PlayerTuning.SkillCooldown;
@@ -148,6 +137,7 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 	}
 	else
 	{
+		LastMeleeAttackTime = -PlayerTuning.MeleeCooldown;
 		LastDashTime = -PlayerTuning.DashCooldown;
 		LastFalculaTime = -PlayerTuning.GrappleCooldown;
 		LastSkillCastTime = -PlayerTuning.SkillCooldown;
@@ -170,7 +160,7 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 		PlayerController->SetControlRotation(RespawnRotation);
 	}
 
-	EnableInput(Cast<APlayerController>(GetController()));
+	UGameplayStatics::SetGlobalTimeDilation(this, 1.0f);
 	OnDamaged.Broadcast(GetLifePercent());
 	OnRespawn.Broadcast();
 }

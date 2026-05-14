@@ -8,7 +8,7 @@
 
 class UProgressBar;
 class AGsPlayer;
-class UTextBlock;
+class UWidget;
 
 /**
  *  纯玩家侧角色 UI 基类
@@ -25,9 +25,9 @@ protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeDestruct() override;
 
-	/** 玩家死亡时显示的提示文本 */
+	/** 玩家死亡时显示的死亡界面，需要在 Widget 蓝图中命名为 DeathWidget */
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock> DieText;
+	TObjectPtr<UWidget> DeathWidget;
 	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UProgressBar> SkillCd;
@@ -42,6 +42,6 @@ private:
 	UFUNCTION()
 	void HandlePlayerRespawn();
 
-	void SetDieTextVisible(bool bVisible);
+	void SetDeathWidgetVisible(bool bVisible);
 	void UpdateSkillCooldown();
 };

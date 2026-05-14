@@ -93,6 +93,15 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Health", meta = (AllowPrivateAccess = "true"))
 	bool bIsDead = false;
 
+	/** 死亡后是否正在等待玩家输入复活 */
+	bool bIsWaitingForRespawnInput = false;
+
+	/** 死亡后是否正在推进全局时间倍率慢动作 */
+	bool bIsDeathTimeDilationActive = false;
+
+	/** 死亡慢动作已经推进的真实时间 */
+	float DeathTimeDilationElapsed = 0.0f;
+
 	/** 当前动作结束计时器 */
 	FTimerHandle ActionTimer;
 
@@ -101,9 +110,6 @@ protected:
 
 	/** 近战命中顿帧恢复计时器 */
 	FTimerHandle MeleeHitStopTimer;
-
-	/** 死亡后复活计时器 */
-	FTimerHandle RespawnTimer;
 
 	/** 近战顿帧前缓存的全局时间倍率 */
 	float CachedMeleeHitStopTimeDilation = 1.0f;
@@ -129,6 +135,15 @@ protected:
 	/** 当前滑铲沿锁定方向的速度 */
 	float CurrentSlideSpeed = 0.0f;
 
+	/** 当前脚步声节拍已经累计的时间 */
+	float FootstepSoundElapsedTime = 0.0f;
+
+	/** 上一帧是否处于脚步声播放状态 */
+	bool bWasFootstepSoundActive = false;
+
+	/** 上一帧脚步声是否使用墙跑节奏 */
+	bool bWasWallRunFootstepSound = false;
+
 	/** 当前是否按住滑铲输入 */
 	bool bIsSlideInputHeld = false;
 
@@ -137,6 +152,9 @@ protected:
 
 	/** 进入冲刺时锁定的方向 */
 	FVector DashDirection = FVector::ForwardVector;
+
+	/** 最近一次成功开始近战攻击的时间 */
+	float LastMeleeAttackTime = 0.0f;
 
 	/** 最近一次成功冲刺发生的时间 */
 	float LastDashTime = 0.0f;
@@ -314,6 +332,9 @@ protected:
 	/** 输入系统回调：处理视角输入 */
 	void LookInput(const FInputActionValue& Value);
 
+	/** 输入系统回调：死亡后确认复活 */
+	void DoRespawn();
+
 	/** 当前是否处于平台边缘宽限跳跃窗口 */
 	bool CanUseCoyoteJump() const;
 
@@ -416,6 +437,12 @@ protected:
 
 	/** 每帧更新滑铲速度与结束条件 */
 	void UpdateSlide(float DeltaSeconds);
+
+	/** 每帧更新普通移动和墙跑的脚步声节拍 */
+	void UpdateFootstepSound(float DeltaSeconds);
+
+	/** 在玩家当前位置播放一次脚步声 */
+	void PlayFootstepSound();
 
 	/** 每帧推进冲刺位移并处理碰撞与结束条件 */
 	void UpdateDash(float DeltaSeconds);
@@ -527,9 +554,6 @@ protected:
 
 	/** 角色死亡时的统一处理 */
 	void Die();
-
-	/** 死亡后延时复活回调 */
-	void OnRespawnTimerElapsed();
 
 	/** 从当前关卡复活状态中读取位置并复活角色 */
 	void RespawnFromCheckpoint();

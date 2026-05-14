@@ -102,7 +102,7 @@ void UBgmSubsystem::PlayCombatBGM(ERealmType InitialRealm)
 	IntroBGMComponent->Play();
 	IntroBGMComponent->SetVolumeMultiplier(1.f);
 
-	const float IntroDuration = AudioData->IntroBGM->GetDuration();
+	const float IntroDuration = AudioData->IntroBGM->GetDuration() - IntroFadeOutTime;
 	if (IntroDuration > 0.f)
 	{
 		if (UWorld* World = GetWorld())
@@ -184,7 +184,7 @@ UAudioComponent* UBgmSubsystem::CreateBGMComponent(USoundBase* Sound)
 void UBgmSubsystem::StartCombatLoop()
 {
 	ClearIntroTimer();
-	StopComponent(IntroBGMComponent, 0.f);
+	StopComponent(IntroBGMComponent, IntroFadeOutTime);
 
 	UAudioDataAsset* AudioData = GetAudioData();
 	if (!AudioData)

@@ -62,6 +62,10 @@ struct UEGAMEJAM_API FGsPlayerTuningRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Melee", meta = (ClampMin = 0))
 	float MeleeDamage = 100.0f;
 
+	/** 两次近战攻击之间的冷却时间，数值越大连续挥刀间隔越久 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Melee", meta = (ClampMin = 0, Units = "s"))
+	float MeleeCooldown = 1.0f;
+
 	/** 没有成功播放攻击蒙太奇时，近战动作锁定的备用时长 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Melee", meta = (ClampMin = 0, Units = "s"))
 	float MeleeFallbackDuration = 0.35f;

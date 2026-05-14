@@ -129,6 +129,7 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 	if (UWorld* World = GetWorld())
 	{
 		const float CurrentWorldTime = World->GetTimeSeconds();
+		LastMeleeAttackTime = CurrentWorldTime - PlayerTuning.MeleeCooldown;
 		LastDashTime = CurrentWorldTime - PlayerTuning.DashCooldown;
 		LastFalculaTime = CurrentWorldTime - PlayerTuning.GrappleCooldown;
 		LastSkillCastTime = CurrentWorldTime - PlayerTuning.SkillCooldown;
@@ -136,6 +137,7 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 	}
 	else
 	{
+		LastMeleeAttackTime = -PlayerTuning.MeleeCooldown;
 		LastDashTime = -PlayerTuning.DashCooldown;
 		LastFalculaTime = -PlayerTuning.GrappleCooldown;
 		LastSkillCastTime = -PlayerTuning.SkillCooldown;

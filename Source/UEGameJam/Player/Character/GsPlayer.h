@@ -144,6 +144,9 @@ protected:
 	/** 进入冲刺时锁定的方向 */
 	FVector DashDirection = FVector::ForwardVector;
 
+	/** 最近一次成功开始近战攻击的时间 */
+	float LastMeleeAttackTime = 0.0f;
+
 	/** 最近一次成功冲刺发生的时间 */
 	float LastDashTime = 0.0f;
 

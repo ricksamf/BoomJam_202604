@@ -91,6 +91,7 @@ void AGsPlayer::BeginPlay()
 	LastSafeRotation = GetActorRotation();
 	bHasSafeLocation = true;
 	LastFallRecoveryTime = -PlayerTuning.SafeLandingMinInterval;
+	LastMeleeAttackTime = -PlayerTuning.MeleeCooldown;
 	LastDashTime = -PlayerTuning.DashCooldown;
 	LastFalculaTime = -PlayerTuning.GrappleCooldown;
 	LastSkillCastTime = -PlayerTuning.SkillCooldown;
@@ -102,6 +103,7 @@ void AGsPlayer::BeginPlay()
 	if (UWorld* World = GetWorld())
 	{
 		const float CurrentWorldTime = World->GetTimeSeconds();
+		LastMeleeAttackTime = CurrentWorldTime - PlayerTuning.MeleeCooldown;
 		LastDashTime = CurrentWorldTime - PlayerTuning.DashCooldown;
 		LastFalculaTime = CurrentWorldTime - PlayerTuning.GrappleCooldown;
 		LastSkillCastTime = CurrentWorldTime - PlayerTuning.SkillCooldown;

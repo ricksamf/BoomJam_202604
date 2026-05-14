@@ -37,6 +37,9 @@ public:
 	FVector GetMuzzleLocation() const;
 
 protected:
+	/** Notify 接管开火:Aim 期间 Montage 触发 NotifyName="Fire" 时,从 AIController.CachedPlayer 拿位置 spawn 子弹 */
+	virtual void HandleFireNotify() override;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Enemy|Pistol")
 	TObjectPtr<USceneComponent> MuzzleComp;
 };

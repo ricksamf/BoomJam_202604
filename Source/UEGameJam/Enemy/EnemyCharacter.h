@@ -14,6 +14,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Animation/AnimMontage.h"
 #include "RealmTagComponent.h"
 #include "EnemyCharacter.generated.h"
 
@@ -124,4 +125,13 @@ protected:
 	/** 绑定 Health 的 OnDepleted */
 	UFUNCTION()
 	void HandleHealthDepleted(UEnemyHealthComponent* Src);
+
+	/** 监听 AnimInstance.OnPlayMontageNotifyBegin —— Montage 时间轴上的 AnimNotify 触发回调。
+	 *  目前识别 NotifyName == "Fire" → 调 HandleFireNotify(子类 override 决定开火行为)。
+	 *  美术约定:三个敌人的攻击 Montage 在"开火帧"加 NotifyName="Fire"。 */
+	UFUNCTION()
+	void OnMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
+
+	/** "Fire" Notify 触发时的回调,默认空操作。Pistol/MG override 来 spawn 子弹。 */
+	virtual void HandleFireNotify() {}
 };

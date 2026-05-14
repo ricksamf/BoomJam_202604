@@ -4,6 +4,7 @@
 
 #include "PistolEnemy.h"
 #include "PistolEnemyDataAsset.h"
+#include "EnemyAIController.h"
 #include "EnemyProjectile.h"
 #include "Animation/AnimMontage.h"
 #include "Components/SceneComponent.h"
@@ -31,8 +32,6 @@ void APistolEnemy::FireProjectile(const FVector& AimLocation)
 	{
 		return;
 	}
-
-	PlayAttackMontage();
 
 	const FVector SpawnLoc = GetMuzzleLocation();
 	FVector Dir = AimLocation - SpawnLoc;
@@ -93,4 +92,24 @@ void APistolEnemy::SpawnWarningFX()
 	}
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, Data->WarningMuzzleFX,
 		GetMuzzleLocation(), GetActorForwardVector().Rotation());
+}
+
+void APistolEnemy::HandleFireNotify()
+{
+	if (IsDead())
+	{
+		return;
+	}
+
+	AActor* Target = nullptr;
+	if (AEnemyAIController* AIC = Cast<AEnemyAIController>(GetController()))
+	{
+		Target = AIC->GetCachedPlayer();
+	}
+
+	const FVector AimLoc = Target
+		? Target->GetActorLocation()
+		: GetMuzzleLocation() + GetActorForwardVector() * 10000.f;
+
+	FireProjectile(AimLoc);
 }

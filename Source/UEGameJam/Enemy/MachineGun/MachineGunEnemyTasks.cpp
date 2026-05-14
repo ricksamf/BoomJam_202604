@@ -73,6 +73,10 @@ EStateTreeRunStatus FEnemyMGBurstTask::EnterState(FStateTreeExecutionContext& Co
 	}
 
 	Data.MGEnemy->SetTrackingEnabled(true, Data.Target);
+	// Burst 期间一次性触发 BurstMontage,Montage 资产里 Section 循环维持节奏。
+	// 子弹由 Montage 内 "Fire" AnimNotify 驱动 spawn(见 AMachineGunEnemy::HandleFireNotify),
+	// 所以下面 Tick 不再主动 FireOneBullet,只统计 Burst 总时长。
+	Data.MGEnemy->PlayAttackMontage();
 	return EStateTreeRunStatus::Running;
 }
 
@@ -85,24 +89,6 @@ EStateTreeRunStatus FEnemyMGBurstTask::Tick(FStateTreeExecutionContext& Context,
 	}
 
 	Data.ElapsedTime += DeltaTime;
-	Data.ShotAccumulator += DeltaTime * Data.FireRate;
-
-	while (Data.ShotAccumulator >= 1.f)
-	{
-		Data.ShotAccumulator -= 1.f;
-
-		FVector AimLoc = FVector::ZeroVector;
-		if (IsValid(Data.Target))
-		{
-			AimLoc = Data.Target->GetActorLocation();
-		}
-		else
-		{
-			AimLoc = Data.MGEnemy->GetMuzzleLocation() + Data.MGEnemy->GetActorForwardVector() * 10000.f;
-		}
-		Data.MGEnemy->FireOneBullet(AimLoc);
-	}
-
 	return (Data.ElapsedTime >= Data.Duration) ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;
 }
 
@@ -112,6 +98,7 @@ void FEnemyMGBurstTask::ExitState(FStateTreeExecutionContext& Context, const FSt
 	if (IsValid(Data.MGEnemy))
 	{
 		Data.MGEnemy->SetTrackingEnabled(false, nullptr);
+		Data.MGEnemy->StopAttackMontage();
 	}
 }
 

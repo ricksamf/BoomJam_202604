@@ -4,6 +4,7 @@
 
 #include "MachineGunEnemy.h"
 #include "MachineGunEnemyDataAsset.h"
+#include "EnemyAIController.h"
 #include "EnemyProjectile.h"
 #include "Animation/AnimMontage.h"
 #include "Components/SceneComponent.h"
@@ -69,8 +70,6 @@ void AMachineGunEnemy::FireOneBullet(const FVector& AimLocation)
 		return;
 	}
 
-	PlayAttackMontage();
-
 	const FVector SpawnLoc = GetMuzzleLocation();
 	FVector BaseDir = AimLocation - SpawnLoc;
 	if (BaseDir.IsNearlyZero())
@@ -118,7 +117,43 @@ void AMachineGunEnemy::PlayAttackMontage()
 	{
 		return;
 	}
+	// Burst 期间一次性触发,Montage 资产里设置 Section 循环维持节奏。
+	// 子弹由 Montage "Fire" AnimNotify 驱动 spawn(见 HandleFireNotify)。
 	PlayAnimMontage(Data->BurstMontage);
+}
+
+void AMachineGunEnemy::StopAttackMontage()
+{
+	const UMachineGunEnemyDataAsset* Data = Cast<UMachineGunEnemyDataAsset>(EnemyData);
+	if (!Data || !Data->BurstMontage)
+	{
+		return;
+	}
+	// Burst 总时长到了,停 Montage(走 Montage 资产的 BlendOutTime)
+	StopAnimMontage(Data->BurstMontage);
+}
+
+void AMachineGunEnemy::HandleFireNotify()
+{
+	if (IsDead())
+	{
+		return;
+	}
+
+	AActor* Target = CurrentTrackTarget.Get();
+	if (!Target)
+	{
+		if (AEnemyAIController* AIC = Cast<AEnemyAIController>(GetController()))
+		{
+			Target = AIC->GetCachedPlayer();
+		}
+	}
+
+	const FVector AimLoc = Target
+		? Target->GetActorLocation()
+		: GetMuzzleLocation() + GetActorForwardVector() * 10000.f;
+
+	FireOneBullet(AimLoc);
 }
 
 void AMachineGunEnemy::SpawnWarningFX()

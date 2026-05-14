@@ -27,6 +27,8 @@ EStateTreeRunStatus FEnemyPistolAimTask::EnterState(FStateTreeExecutionContext& 
 		return EStateTreeRunStatus::Failed;
 	}
 
+	Data.PistolEnemy->PlayAttackMontage();
+
 	return EStateTreeRunStatus::Running;
 }
 
@@ -68,18 +70,9 @@ EStateTreeRunStatus FEnemyPistolFireTask::EnterState(FStateTreeExecutionContext&
 		return EStateTreeRunStatus::Failed;
 	}
 
-	FVector AimLoc = FVector::ZeroVector;
-	if (IsValid(Data.Target))
-	{
-		AimLoc = Data.Target->GetActorLocation();
-	}
-	else
-	{
-		AimLoc = Data.PistolEnemy->GetMuzzleLocation() + Data.PistolEnemy->GetActorForwardVector() * 10000.f;
-	}
-
-	Data.PistolEnemy->FireProjectile(AimLoc);
-	return EStateTreeRunStatus::Succeeded; // 单帧任务
+	// 子弹 Spawn 由 Montage 的 "Fire" AnimNotify 驱动(见 AEnemyCharacter::OnMontageNotifyBegin
+	// → APistolEnemy::HandleFireNotify),与动画"开火帧"严格对齐。本 Task 只作语义状态过渡。
+	return EStateTreeRunStatus::Succeeded;
 }
 
 #if WITH_EDITOR

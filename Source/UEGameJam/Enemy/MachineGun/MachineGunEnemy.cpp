@@ -6,8 +6,9 @@
 #include "MachineGunEnemyDataAsset.h"
 #include "EnemyAIController.h"
 #include "EnemyProjectile.h"
+#include "EnemyWeaponComponent.h"
 #include "Animation/AnimMontage.h"
-#include "Components/SceneComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Engine/World.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -18,8 +19,30 @@ AMachineGunEnemy::AMachineGunEnemy()
 
 	DefaultRealmType = ERealmType::Surface;
 
-	MuzzleComp = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
-	MuzzleComp->SetupAttachment(GetMesh());
+	Weapon = CreateDefaultSubobject<UEnemyWeaponComponent>(TEXT("Weapon"));
+	Weapon->SetupAttachment(GetMesh(), TEXT("Weapon_Attach_R"));
+}
+
+void AMachineGunEnemy::ApplyDataAsset()
+{
+	Super::ApplyDataAsset();
+
+	if (!Weapon)
+	{
+		return;
+	}
+
+	const UMachineGunEnemyDataAsset* Data = Cast<UMachineGunEnemyDataAsset>(EnemyData);
+	if (!Data)
+	{
+		Weapon->SetStaticMesh(nullptr);
+		return;
+	}
+
+	Weapon->SetStaticMesh(Data->WeaponMesh);
+	Weapon->SetRelativeTransform(Data->WeaponAttachTransform);
+	Weapon->MuzzleSocketName = Data->WeaponMuzzleSocket;
+	Weapon->MuzzleLocalOffset = Data->WeaponMuzzleLocalOffset;
 }
 
 void AMachineGunEnemy::Tick(float DeltaSeconds)
@@ -103,7 +126,7 @@ void AMachineGunEnemy::FireOneBullet(const FVector& AimLocation)
 
 FVector AMachineGunEnemy::GetMuzzleLocation() const
 {
-	return MuzzleComp ? MuzzleComp->GetComponentLocation() : GetActorLocation();
+	return Weapon ? Weapon->GetMuzzleLocation() : GetActorLocation();
 }
 
 void AMachineGunEnemy::PlayAttackMontage()
@@ -167,6 +190,8 @@ void AMachineGunEnemy::SpawnWarningFX()
 	{
 		return;
 	}
+	const FVector MuzzleLoc = GetMuzzleLocation();
+	const FVector MuzzleDir = Weapon ? Weapon->GetMuzzleForward() : GetActorForwardVector();
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, Data->WarningMuzzleFX,
-		GetMuzzleLocation(), GetActorForwardVector().Rotation());
+		MuzzleLoc, MuzzleDir.Rotation());
 }

@@ -53,13 +53,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
 	TObjectPtr<UInputAction> FalculaAction;
 
+	/** 死亡后用于确认并复活玩家的输入动作 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
+	TObjectPtr<UInputAction> RespawnAction;
+
 	/** 近战攻击时播放的动画蒙太奇 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Melee")
 	TObjectPtr<UAnimMontage> MeleeAttackMontage;
-
-	/** 近战攻击挥剑时播放的破空音效 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Melee")
-	TObjectPtr<USoundBase> MeleeSwingSound;
 
 	/** 近战攻击实际砍中敌人时播放的命中音效 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Melee")

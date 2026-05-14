@@ -9,6 +9,8 @@
 #include "Engine/Engine.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InputActionValue.h"
+#include "Kismet/GameplayStatics.h"
+#include "Misc/App.h"
 #include "TimerManager.h"
 #include "UEGameJam.h"
 #include "Player/Character/GsPlayerResourceDataAsset.h"
@@ -16,6 +18,8 @@
 #include "RealmRevealerComponent.h"
 
 static const FRotator FirstPersonCameraInitialRelativeRotation(0.0f, 90.0f, -90.0f);
+static constexpr float DeathTimeDilationDuration = 0.4f;
+static constexpr float DeathTimeDilationTarget = 0.02f;
 
 AGsPlayer::AGsPlayer()
 {
@@ -67,6 +71,9 @@ void AGsPlayer::BeginPlay()
 
 	CurrentHP = PlayerTuning.MaxHP;
 	bIsDead = false;
+	bIsWaitingForRespawnInput = false;
+	bIsDeathTimeDilationActive = false;
+	DeathTimeDilationElapsed = 0.0f;
 	bHasDashedSinceLanded = false;
 	PreDashVelocity = FVector::ZeroVector;
 	PreDashMovementMode = MOVE_Walking;
@@ -173,6 +180,15 @@ void AGsPlayer::Tick(float DeltaSeconds)
 
 	if (bIsDead)
 	{
+		if (bIsDeathTimeDilationActive)
+		{
+			DeathTimeDilationElapsed += FApp::GetDeltaTime();
+			const float Alpha = FMath::Clamp(DeathTimeDilationElapsed / DeathTimeDilationDuration, 0.0f, 1.0f);
+			const float NewTimeDilation = FMath::Lerp(1.0f, DeathTimeDilationTarget, Alpha);
+			UGameplayStatics::SetGlobalTimeDilation(this, NewTimeDilation);
+			bIsDeathTimeDilationActive = Alpha < 1.0f;
+		}
+
 		if (FirstPersonCameraComponent)
 		{
 			UpdateWallRunCameraTilt(DeltaSeconds);
@@ -261,13 +277,18 @@ void AGsPlayer::EndPlay(EEndPlayReason::Type EndPlayReason)
 	}
 	ResetWallRunDetection();
 	FinishMeleeHitStop();
+	if (bIsDead || bIsDeathTimeDilationActive)
+	{
+		UGameplayStatics::SetGlobalTimeDilation(this, 1.0f);
+		bIsDeathTimeDilationActive = false;
+		DeathTimeDilationElapsed = 0.0f;
+	}
 
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().ClearTimer(ActionTimer);
 		World->GetTimerManager().ClearTimer(MeleeHitTimer);
 		World->GetTimerManager().ClearTimer(MeleeHitStopTimer);
-		World->GetTimerManager().ClearTimer(RespawnTimer);
 	}
 
 	Super::EndPlay(EndPlayReason);
@@ -279,6 +300,12 @@ void AGsPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
+		if (!PlayerResourceData)
+		{
+			UE_LOG(LogUEGameJam, Error, TEXT("'%s' 未配置玩家资源引用 PlayerResourceData。"), *GetNameSafe(this));
+			return;
+		}
+
 		EnhancedInputComponent->BindAction(PlayerResourceData->JumpAction, ETriggerEvent::Started, this, &AGsPlayer::DoJumpStart);
 		EnhancedInputComponent->BindAction(PlayerResourceData->JumpAction, ETriggerEvent::Completed, this, &AGsPlayer::DoJumpEnd);
 		EnhancedInputComponent->BindAction(PlayerResourceData->MoveAction, ETriggerEvent::Triggered, this, &AGsPlayer::MoveInput);
@@ -290,6 +317,14 @@ void AGsPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(PlayerResourceData->SlideAction, ETriggerEvent::Completed, this, &AGsPlayer::DoSlideEnd);
 		EnhancedInputComponent->BindAction(PlayerResourceData->DashAction, ETriggerEvent::Started, this, &AGsPlayer::DoDash);
 		EnhancedInputComponent->BindAction(PlayerResourceData->FalculaAction, ETriggerEvent::Started, this, &AGsPlayer::DoFalcula);
+		if (PlayerResourceData->RespawnAction)
+		{
+			EnhancedInputComponent->BindAction(PlayerResourceData->RespawnAction, ETriggerEvent::Started, this, &AGsPlayer::DoRespawn);
+		}
+		else
+		{
+			UE_LOG(LogUEGameJam, Warning, TEXT("'%s' 未配置 RespawnAction，死亡后无法通过输入复活。"), *GetNameSafe(this));
+		}
 	}
 	else
 	{
@@ -399,6 +434,16 @@ void AGsPlayer::LookInput(const FInputActionValue& Value)
 {
 	const FVector2D LookAxisVector = Value.Get<FVector2D>();
 	DoAim(LookAxisVector.X, LookAxisVector.Y);
+}
+
+void AGsPlayer::DoRespawn()
+{
+	if (!bIsDead || !bIsWaitingForRespawnInput)
+	{
+		return;
+	}
+
+	RespawnFromCheckpoint();
 }
 
 float AGsPlayer::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

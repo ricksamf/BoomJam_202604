@@ -67,6 +67,10 @@ protected:
 	/** BGM停止时的淡出时间 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio|BGM", meta=(ClampMin="0.0"))
 	float StopFadeOutTime = 1.f;
+	
+	/** BGM停止时的淡出时间 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio|BGM", meta=(ClampMin="0.0"))
+	float IntroFadeOutTime = 0.3f;
 
 	/** 表世界和里世界战斗BGM切换时的淡入淡出时间 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio|BGM", meta=(ClampMin="0.0"))

@@ -198,7 +198,7 @@ struct UEGAMEJAM_API FGsPlayerTuningRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Health", meta = (ClampMin = 0))
 	float MaxHP = 500.0f;
 
-	/** 死亡后延时复活的时间，留 0 表示立即复活 */
+	/** 已废弃：死亡复活现在由 RespawnAction 确认，不再使用延时自动复活 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Health", meta = (ClampMin = 0, Units = "s"))
 	float DeferredDestructionTime = 5.0f;
 };

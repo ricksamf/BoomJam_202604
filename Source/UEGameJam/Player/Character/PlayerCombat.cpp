@@ -21,6 +21,11 @@
 
 void AGsPlayer::DoSkill()
 {
+	if (bIsDead)
+	{
+		return;
+	}
+
 	BP_OnSkillInput();
 	StartSkillCast();
 }
@@ -50,11 +55,6 @@ bool AGsPlayer::StartMeleeAttack()
 	if (!TryStartCharacterAction(EUEGameJamPlayerAction::MeleeAttack, ActionDuration))
 	{
 		return false;
-	}
-
-	if (PlayerResourceData && PlayerResourceData->MeleeSwingSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->MeleeSwingSound, GetActorLocation());
 	}
 
 	UWorld* World = GetWorld();

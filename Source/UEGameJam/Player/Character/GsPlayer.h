@@ -93,6 +93,15 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Health", meta = (AllowPrivateAccess = "true"))
 	bool bIsDead = false;
 
+	/** 死亡后是否正在等待玩家输入复活 */
+	bool bIsWaitingForRespawnInput = false;
+
+	/** 死亡后是否正在推进全局时间倍率慢动作 */
+	bool bIsDeathTimeDilationActive = false;
+
+	/** 死亡慢动作已经推进的真实时间 */
+	float DeathTimeDilationElapsed = 0.0f;
+
 	/** 当前动作结束计时器 */
 	FTimerHandle ActionTimer;
 
@@ -101,9 +110,6 @@ protected:
 
 	/** 近战命中顿帧恢复计时器 */
 	FTimerHandle MeleeHitStopTimer;
-
-	/** 死亡后复活计时器 */
-	FTimerHandle RespawnTimer;
 
 	/** 近战顿帧前缓存的全局时间倍率 */
 	float CachedMeleeHitStopTimeDilation = 1.0f;
@@ -313,6 +319,9 @@ protected:
 
 	/** 输入系统回调：处理视角输入 */
 	void LookInput(const FInputActionValue& Value);
+
+	/** 输入系统回调：死亡后确认复活 */
+	void DoRespawn();
 
 	/** 当前是否处于平台边缘宽限跳跃窗口 */
 	bool CanUseCoyoteJump() const;
@@ -527,9 +536,6 @@ protected:
 
 	/** 角色死亡时的统一处理 */
 	void Die();
-
-	/** 死亡后延时复活回调 */
-	void OnRespawnTimerElapsed();
 
 	/** 从当前关卡复活状态中读取位置并复活角色 */
 	void RespawnFromCheckpoint();

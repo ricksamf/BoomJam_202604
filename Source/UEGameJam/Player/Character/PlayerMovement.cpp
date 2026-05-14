@@ -430,6 +430,73 @@ void AGsPlayer::UpdateSlide(float DeltaSeconds)
 	PlayerMovementComponent->Velocity = NewVelocity;
 }
 
+void AGsPlayer::UpdateFootstepSound(float DeltaSeconds)
+{
+	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
+	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
+	const bool bShouldUseWallRunFootstep = IsWallRunning();
+	const bool bShouldUseGroundFootstep =
+		PlayerMovementComponent
+		&& PlayerMovementComponent->IsMovingOnGround()
+		&& !IsSliding()
+		&& !IsDashing()
+		&& !bIsFalculaLaunching
+		&& !IsLedgeClimbing()
+		&& !bShouldUseWallRunFootstep
+		&& GetVelocity().Size2D() >= PlayerTuning.FootstepMinSpeed;
+	const bool bShouldPlayFootstepSound =
+		!bIsDead
+		&& PlayerResourceData
+		&& PlayerResourceData->FootstepSound
+		&& (bShouldUseWallRunFootstep || bShouldUseGroundFootstep);
+
+	if (!bShouldPlayFootstepSound)
+	{
+		FootstepSoundElapsedTime = 0.0f;
+		bWasFootstepSoundActive = false;
+		bWasWallRunFootstepSound = false;
+		return;
+	}
+
+	const float FootstepInterval = bShouldUseWallRunFootstep
+		? PlayerTuning.FootstepWallRunInterval
+		: PlayerTuning.FootstepWalkInterval;
+	if (FootstepInterval <= KINDA_SMALL_NUMBER)
+	{
+		PlayFootstepSound();
+		FootstepSoundElapsedTime = 0.0f;
+		bWasFootstepSoundActive = true;
+		bWasWallRunFootstepSound = bShouldUseWallRunFootstep;
+		return;
+	}
+
+	if (!bWasFootstepSoundActive || bWasWallRunFootstepSound != bShouldUseWallRunFootstep)
+	{
+		FootstepSoundElapsedTime = FootstepInterval;
+	}
+	else
+	{
+		FootstepSoundElapsedTime += DeltaSeconds;
+	}
+
+	while (FootstepSoundElapsedTime >= FootstepInterval)
+	{
+		PlayFootstepSound();
+		FootstepSoundElapsedTime -= FootstepInterval;
+	}
+
+	bWasFootstepSoundActive = true;
+	bWasWallRunFootstepSound = bShouldUseWallRunFootstep;
+}
+
+void AGsPlayer::PlayFootstepSound()
+{
+	if (PlayerResourceData && PlayerResourceData->FootstepSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->FootstepSound, GetActorLocation());
+	}
+}
+
 void AGsPlayer::UpdateDash(float DeltaSeconds)
 {
 	if (!IsDashing())

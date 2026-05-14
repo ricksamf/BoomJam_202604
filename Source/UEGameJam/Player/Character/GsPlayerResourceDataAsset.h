@@ -69,6 +69,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")
 	TObjectPtr<USoundBase> SlideReleaseSound;
 
+	/** 普通移动和墙跑时循环播放的脚步声 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")
+	TObjectPtr<USoundBase> FootstepSound;
+
 	/** 成功释放钩索并开始牵引时播放的音效 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")
 	TObjectPtr<USoundBase> GrappleReleaseSound;

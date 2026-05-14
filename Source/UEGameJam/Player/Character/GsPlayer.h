@@ -135,6 +135,15 @@ protected:
 	/** 当前滑铲沿锁定方向的速度 */
 	float CurrentSlideSpeed = 0.0f;
 
+	/** 当前脚步声节拍已经累计的时间 */
+	float FootstepSoundElapsedTime = 0.0f;
+
+	/** 上一帧是否处于脚步声播放状态 */
+	bool bWasFootstepSoundActive = false;
+
+	/** 上一帧脚步声是否使用墙跑节奏 */
+	bool bWasWallRunFootstepSound = false;
+
 	/** 当前是否按住滑铲输入 */
 	bool bIsSlideInputHeld = false;
 
@@ -428,6 +437,12 @@ protected:
 
 	/** 每帧更新滑铲速度与结束条件 */
 	void UpdateSlide(float DeltaSeconds);
+
+	/** 每帧更新普通移动和墙跑的脚步声节拍 */
+	void UpdateFootstepSound(float DeltaSeconds);
+
+	/** 在玩家当前位置播放一次脚步声 */
+	void PlayFootstepSound();
 
 	/** 每帧推进冲刺位移并处理碰撞与结束条件 */
 	void UpdateDash(float DeltaSeconds);

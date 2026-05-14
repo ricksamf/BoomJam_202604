@@ -126,6 +126,18 @@ struct UEGAMEJAM_API FGsPlayerTuningRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera", meta = (ClampMin = 0, Units = "cm/s"))
 	float RunFOVSpeedThreshold = 450.0f;
 
+	/** 水平移动速度低于这个值时不会播放脚步声 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement", meta = (ClampMin = 0, Units = "cm/s"))
+	float FootstepMinSpeed = 10.0f;
+
+	/** 普通地面移动时两次脚步声之间的间隔 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement", meta = (ClampMin = 0, Units = "s"))
+	float FootstepWalkInterval = 0.42f;
+
+	/** 墙跑时两次脚步声之间的间隔 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement", meta = (ClampMin = 0, Units = "s"))
+	float FootstepWallRunInterval = 0.28f;
+
 	/** 相机 FOV 向目标值过渡的速度，数值越大变化越快 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera", meta = (ClampMin = 0))
 	float CameraFOVInterpSpeed = 8.0f;

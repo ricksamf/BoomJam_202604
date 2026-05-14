@@ -205,6 +205,7 @@ void AGsPlayer::Tick(float DeltaSeconds)
 	UpdateLedgeClimb(DeltaSeconds);
 	UpdateWallRun(DeltaSeconds);
 	UpdateWallRunDetection();
+	UpdateFootstepSound(DeltaSeconds);
 	SyncBGMWithCurrentRealm();
 
 	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();

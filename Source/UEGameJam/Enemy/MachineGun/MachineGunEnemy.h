@@ -24,9 +24,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
 	void FireOneBullet(const FVector& AimLocation);
 
-	/** 播放 DataAsset 里配置的 BurstMontage（由 FireOneBullet 每颗子弹调用） */
+	/** 播放 DataAsset 里配置的 BurstMontage（由 MGBurst Task EnterState 一次性调用,Montage 资产 Section 循环） */
 	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
 	void PlayAttackMontage();
+
+	/** 停止 BurstMontage(Burst Task ExitState 调用,blend out 自然过渡回 Locomotion) */
+	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
+	void StopAttackMontage();
 
 	/** 在枪口位置一次性 Spawn DataAsset 里的 WarningMuzzleFX（开火前预警特效） */
 	UFUNCTION(BlueprintCallable, Category="Enemy|MG")
@@ -41,6 +45,9 @@ public:
 
 protected:
 	virtual void Tick(float DeltaSeconds) override;
+
+	/** Notify 接管开火:Burst 期间循环 Montage 每圈触发 NotifyName="Fire" → spawn 一发子弹 */
+	virtual void HandleFireNotify() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Enemy|MG")
 	TObjectPtr<USceneComponent> MuzzleComp;

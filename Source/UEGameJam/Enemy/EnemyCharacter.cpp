@@ -9,6 +9,7 @@
 #include "RealmTagComponent.h"
 #include "RealmHurtSwitchComponent.h"
 #include "AIController.h"
+#include "Animation/AnimInstance.h"
 #include "BrainComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/CapsuleComponent.h"
@@ -79,6 +80,16 @@ void AEnemyCharacter::BeginPlay()
 	if (UEnemySubsystem* Sub = UEnemySubsystem::Get(this))
 	{
 		Sub->RegisterEnemy(this);
+	}
+
+	// 监听 Montage AnimNotify。子类靠 HandleFireNotify() 接收 "Fire" 通知,
+	// 由动画驱动开火时机(美术在 Montage 时间轴上加 NotifyName="Fire")。
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		if (UAnimInstance* AnimInst = MeshComp->GetAnimInstance())
+		{
+			AnimInst->OnPlayMontageNotifyBegin.AddDynamic(this, &AEnemyCharacter::OnMontageNotifyBegin);
+		}
 	}
 }
 
@@ -154,6 +165,18 @@ void AEnemyCharacter::ApplyDataAsset()
 void AEnemyCharacter::HandleHealthDepleted(UEnemyHealthComponent* /*Src*/)
 {
 	Die();
+}
+
+void AEnemyCharacter::OnMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& /*Payload*/)
+{
+	if (bIsDead)
+	{
+		return;
+	}
+	if (NotifyName == FName(TEXT("Fire")))
+	{
+		HandleFireNotify();
+	}
 }
 
 void AEnemyCharacter::Die()

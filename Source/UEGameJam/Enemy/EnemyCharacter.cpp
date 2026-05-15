@@ -97,6 +97,15 @@ void AEnemyCharacter::BeginPlay()
 			AnimInst->OnPlayMontageNotifyBegin.AddDynamic(this, &AEnemyCharacter::OnMontageNotifyBegin);
 		}
 	}
+
+	// 启动 IndicatorWidget 距离过滤(玩家在 IndicatorVisibleRange 之外不显示)
+	if (IndicatorWidget)
+	{
+		const float Interval = FMath::Max(0.05f, IndicatorVisibilityCheckInterval);
+		GetWorldTimerManager().SetTimer(IndicatorVisibilityTimer, this,
+			&AEnemyCharacter::UpdateIndicatorVisibility, Interval, true);
+		UpdateIndicatorVisibility();
+	}
 }
 
 void AEnemyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -104,6 +113,7 @@ void AEnemyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().ClearTimer(DeathTimer);
+		World->GetTimerManager().ClearTimer(IndicatorVisibilityTimer);
 	}
 
 	// 保证任何未走完 Die() 流程的敌人（例如直接 Destroy）也能从 Subsystem 移除
@@ -185,6 +195,38 @@ void AEnemyCharacter::OnMontageNotifyBegin(FName NotifyName, const FBranchingPoi
 	}
 }
 
+void AEnemyCharacter::UpdateIndicatorVisibility()
+{
+	if (!IndicatorWidget)
+	{
+		return;
+	}
+
+	if (bIsDead)
+	{
+		IndicatorWidget->SetVisibility(false, true);
+		return;
+	}
+
+	// IndicatorVisibleRange <= 0 视为不限距离(永远显示)
+	if (IndicatorVisibleRange <= 0.f)
+	{
+		IndicatorWidget->SetVisibility(true, true);
+		return;
+	}
+
+	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (!PlayerPawn)
+	{
+		IndicatorWidget->SetVisibility(false, true);
+		return;
+	}
+
+	const float DistSq = FVector::DistSquared(GetActorLocation(), PlayerPawn->GetActorLocation());
+	const float RangeSq = IndicatorVisibleRange * IndicatorVisibleRange;
+	IndicatorWidget->SetVisibility(DistSq <= RangeSq, true);
+}
+
 void AEnemyCharacter::Die()
 {
 	if (bIsDead)
@@ -233,6 +275,7 @@ void AEnemyCharacter::Die()
 	{
 		IndicatorWidget->SetVisibility(false);
 	}
+	GetWorldTimerManager().ClearTimer(IndicatorVisibilityTimer);
 
 	OnEnemyDeath.Broadcast(this);
 

@@ -70,11 +70,11 @@ protected:
 	
 	/** BGM停止时的淡出时间 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio|BGM", meta=(ClampMin="0.0"))
-	float IntroFadeOutTime = 0.3f;
+	float IntroFadeOutTime = 0.5f;
 
 	/** 表世界和里世界战斗BGM切换时的淡入淡出时间 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio|BGM", meta=(ClampMin="0.0"))
-	float CombatCrossFadeTime = 1.f;
+	float CombatCrossFadeTime = 0.4f;
 
 private:
 	UPROPERTY(Transient)

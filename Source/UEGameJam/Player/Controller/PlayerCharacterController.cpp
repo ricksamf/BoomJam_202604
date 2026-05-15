@@ -72,6 +72,16 @@ void APlayerCharacterController::SetupInputComponent()
 	}
 }
 
+void APlayerCharacterController::TogglePauseMenu()
+{
+	if (!IsLocalPlayerController() || !PlayerUI)
+	{
+		return;
+	}
+
+	PlayerUI->TogglePauseMenu();
+}
+
 void APlayerCharacterController::InitializePlayerUI(APawn* InPawn)
 {
 	if (!IsLocalPlayerController() || !PlayerUI)

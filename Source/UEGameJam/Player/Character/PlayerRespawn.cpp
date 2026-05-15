@@ -113,7 +113,6 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 	SlideDirection = FVector::ForwardVector;
 	bHasDashedSinceLanded = false;
 	bIsFalculaLaunching = false;
-	bIsRecoveringFromFall = false;
 	bHasSafeLocation = true;
 	LastSafeLocation = RespawnTransform.GetLocation();
 	LastSafeRotation = RespawnTransform.GetRotation().Rotator();
@@ -133,7 +132,6 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 		LastDashTime = CurrentWorldTime - PlayerTuning.DashCooldown;
 		LastFalculaTime = CurrentWorldTime - PlayerTuning.GrappleCooldown;
 		LastSkillCastTime = CurrentWorldTime - PlayerTuning.SkillCooldown;
-		LastFallRecoveryTime = CurrentWorldTime - PlayerTuning.SafeLandingMinInterval;
 	}
 	else
 	{
@@ -141,7 +139,6 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 		LastDashTime = -PlayerTuning.DashCooldown;
 		LastFalculaTime = -PlayerTuning.GrappleCooldown;
 		LastSkillCastTime = -PlayerTuning.SkillCooldown;
-		LastFallRecoveryTime = -PlayerTuning.SafeLandingMinInterval;
 	}
 
 	const FRotator RespawnRotation = RespawnTransform.GetRotation().Rotator();

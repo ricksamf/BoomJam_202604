@@ -14,6 +14,7 @@
 #include "TimerManager.h"
 #include "UEGameJam.h"
 #include "Player/Character/GsPlayerResourceDataAsset.h"
+#include "Player/Controller/PlayerCharacterController.h"
 #include "Player/Game/GsLevelStateGameState.h"
 #include "RealmRevealerComponent.h"
 
@@ -90,7 +91,6 @@ void AGsPlayer::BeginPlay()
 	LastSafeLocation = GetActorLocation();
 	LastSafeRotation = GetActorRotation();
 	bHasSafeLocation = true;
-	LastFallRecoveryTime = -PlayerTuning.SafeLandingMinInterval;
 	LastMeleeAttackTime = -PlayerTuning.MeleeCooldown;
 	LastDashTime = -PlayerTuning.DashCooldown;
 	LastFalculaTime = -PlayerTuning.GrappleCooldown;
@@ -215,21 +215,6 @@ void AGsPlayer::Tick(float DeltaSeconds)
 	}
 
 	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
-	if (PlayerMovementComponent
-		&& PlayerMovementComponent->IsFalling()
-		&& bHasSafeLocation
-		&& !bIsRecoveringFromFall
-		&& PlayerTuning.FallResetDepth > 0.0f)
-	{
-		UWorld* World = GetWorld();
-		const float CurrentWorldTime = World ? World->GetTimeSeconds() : 0.0f;
-		if ((CurrentWorldTime - LastFallRecoveryTime) >= PlayerTuning.SafeLandingMinInterval
-			&& GetActorLocation().Z <= (LastSafeLocation.Z - PlayerTuning.FallResetDepth))
-		{
-			RecoverFromDeepFall();
-		}
-	}
-
 	if (!FirstPersonCameraComponent)
 	{
 		return;
@@ -320,6 +305,14 @@ void AGsPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(PlayerResourceData->SlideAction, ETriggerEvent::Completed, this, &AGsPlayer::DoSlideEnd);
 		EnhancedInputComponent->BindAction(PlayerResourceData->DashAction, ETriggerEvent::Started, this, &AGsPlayer::DoDash);
 		EnhancedInputComponent->BindAction(PlayerResourceData->FalculaAction, ETriggerEvent::Started, this, &AGsPlayer::DoFalcula);
+		if (PlayerResourceData->PauseAction)
+		{
+			EnhancedInputComponent->BindAction(PlayerResourceData->PauseAction, ETriggerEvent::Started, this, &AGsPlayer::DoTogglePauseMenu);
+		}
+		else
+		{
+			UE_LOG(LogUEGameJam, Warning, TEXT("'%s' 未配置 PauseAction，无法通过输入打开暂停界面。"), *GetNameSafe(this));
+		}
 		if (PlayerResourceData->RespawnAction)
 		{
 			EnhancedInputComponent->BindAction(PlayerResourceData->RespawnAction, ETriggerEvent::Started, this, &AGsPlayer::DoRespawn);
@@ -447,6 +440,14 @@ void AGsPlayer::DoRespawn()
 	}
 
 	RespawnFromCheckpoint();
+}
+
+void AGsPlayer::DoTogglePauseMenu()
+{
+	if (APlayerCharacterController* PlayerController = Cast<APlayerCharacterController>(GetController()))
+	{
+		PlayerController->TogglePauseMenu();
+	}
 }
 
 float AGsPlayer::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -704,75 +705,7 @@ void AGsPlayer::AbortDash()
 
 void AGsPlayer::UpdateSafeLandingTransform()
 {
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return;
-	}
-
-	if ((World->GetTimeSeconds() - LastFallRecoveryTime) < GetPlayerTuning().SafeLandingMinInterval)
-	{
-		return;
-	}
-
 	LastSafeLocation = GetActorLocation();
 	LastSafeRotation = GetActorRotation();
 	bHasSafeLocation = true;
 }
-
-void AGsPlayer::RecoverFromDeepFall()
-{
-	if (bIsDead || bIsRecoveringFromFall || !bHasSafeLocation)
-	{
-		return;
-	}
-
-	bIsRecoveringFromFall = true;
-
-	if (UWorld* World = GetWorld())
-	{
-		LastFallRecoveryTime = World->GetTimeSeconds();
-	}
-
-	StopSlide(true);
-	if (IsDashing())
-	{
-		AbortDash();
-	}
-	AbortGrapple();
-	if (IsLedgeClimbing())
-	{
-		AbortLedgeClimb();
-	}
-	if (IsWallRunning())
-	{
-		StopWallRun();
-	}
-	else
-	{
-		ClearDashState();
-		FinishCharacterAction();
-	}
-	bHasDashedSinceLanded = false;
-	ClearGrappleState();
-	ResetWallRunDetection();
-
-	if (UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement())
-	{
-		PlayerMovementComponent->StopMovementImmediately();
-		PlayerMovementComponent->StopActiveMovement();
-		PlayerMovementComponent->Velocity = FVector::ZeroVector;
-		PlayerMovementComponent->SetMovementMode(MOVE_Walking);
-	}
-
-	SetActorLocationAndRotation(LastSafeLocation, LastSafeRotation, false, nullptr, ETeleportType::TeleportPhysics);
-
-	if (UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement())
-	{
-		PlayerMovementComponent->StopMovementImmediately();
-		PlayerMovementComponent->Velocity = FVector::ZeroVector;
-	}
-
-	bIsRecoveringFromFall = false;
-}
-

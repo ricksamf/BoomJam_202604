@@ -57,6 +57,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
 	TObjectPtr<UInputAction> RespawnAction;
 
+	/** 打开或关闭暂停界面的输入动作 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
+	TObjectPtr<UInputAction> PauseAction;
+
 	/** 近战攻击时播放的动画蒙太奇 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Melee")
 	TObjectPtr<UAnimMontage> MeleeAttackMontage;
@@ -68,6 +72,10 @@ public:
 	/** 释放或结束滑铲时播放的音效 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")
 	TObjectPtr<USoundBase> SlideReleaseSound;
+
+	/** 滑铲期间循环播放的音效，需要音效资源本身设置为循环或使用循环 SoundCue */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")
+	TObjectPtr<USoundBase> SlideLoopSound;
 
 	/** 普通移动和墙跑时循环播放的脚步声 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")

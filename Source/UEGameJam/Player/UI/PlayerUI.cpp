@@ -1,9 +1,11 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "PlayerUI.h"
+
 #include "Components/ProgressBar.h"
 #include "Components/Widget.h"
 #include "Player/Character/GsPlayer.h"
+#include "Player/UI/GsPauseMenuUI.h"
 
 void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 {
@@ -31,6 +33,30 @@ void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 	UpdateSkillCooldown();
 }
 
+void UPlayerUI::ShowPauseMenu()
+{
+	if (PauseWidget)
+	{
+		PauseWidget->ShowPauseMenu();
+	}
+}
+
+void UPlayerUI::HidePauseMenu()
+{
+	if (PauseWidget)
+	{
+		PauseWidget->HidePauseMenu();
+	}
+}
+
+void UPlayerUI::TogglePauseMenu()
+{
+	if (PauseWidget)
+	{
+		PauseWidget->TogglePauseMenu();
+	}
+}
+
 void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
@@ -40,6 +66,11 @@ void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void UPlayerUI::NativeDestruct()
 {
+	if (PauseWidget)
+	{
+		PauseWidget->HidePauseMenu();
+	}
+
 	if (BoundPlayer)
 	{
 		BoundPlayer->OnDeath.RemoveDynamic(this, &UPlayerUI::HandlePlayerDeath);

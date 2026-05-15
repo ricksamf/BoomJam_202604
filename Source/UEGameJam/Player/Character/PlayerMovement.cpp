@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Player/Character/GsPlayer.h"
+#include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -147,6 +148,8 @@ bool AGsPlayer::StartSlide()
 	NewVelocity.Z = PlayerMovementComponent->Velocity.Z;
 	PlayerMovementComponent->Velocity = NewVelocity;
 
+	StartSlideLoopSound();
+
 	return true;
 }
 
@@ -265,6 +268,7 @@ bool AGsPlayer::StopSlide(bool bForceRestore)
 	if (!IsSliding())
 	{
 		bIsWaitingToStopSlideWhenCanStand = false;
+		StopSlideLoopSound();
 		return true;
 	}
 
@@ -276,6 +280,7 @@ bool AGsPlayer::StopSlide(bool bForceRestore)
 		CurrentSlideSpeed = 0.0f;
 		bIsSlideInputHeld = false;
 		bIsWaitingToStopSlideWhenCanStand = false;
+		StopSlideLoopSound();
 		FinishCharacterAction();
 		return true;
 	}
@@ -300,6 +305,7 @@ bool AGsPlayer::StopSlide(bool bForceRestore)
 	CurrentSlideSpeed = 0.0f;
 	bIsSlideInputHeld = false;
 	bIsWaitingToStopSlideWhenCanStand = false;
+	StopSlideLoopSound();
 	FinishCharacterAction();
 
 	if (PlayerResourceData && PlayerResourceData->SlideReleaseSound)
@@ -495,6 +501,54 @@ void AGsPlayer::PlayFootstepSound()
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, PlayerResourceData->FootstepSound, GetActorLocation());
 	}
+}
+
+void AGsPlayer::StartSlideLoopSound()
+{
+	StopSlideLoopSound();
+
+	if (!PlayerResourceData || !PlayerResourceData->SlideLoopSound)
+	{
+		return;
+	}
+
+	USceneComponent* AttachComponent = GetRootComponent();
+	if (!AttachComponent)
+	{
+		AttachComponent = GetCapsuleComponent();
+	}
+
+	if (!AttachComponent)
+	{
+		return;
+	}
+
+	SlideLoopSoundComponent = UGameplayStatics::SpawnSoundAttached(
+		PlayerResourceData->SlideLoopSound,
+		AttachComponent,
+		NAME_None,
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		EAttachLocation::KeepRelativeOffset,
+		true,
+		1.0f,
+		1.0f,
+		0.0f,
+		nullptr,
+		nullptr,
+		false);
+}
+
+void AGsPlayer::StopSlideLoopSound()
+{
+	if (!SlideLoopSoundComponent)
+	{
+		return;
+	}
+
+	SlideLoopSoundComponent->Stop();
+	SlideLoopSoundComponent->DestroyComponent();
+	SlideLoopSoundComponent = nullptr;
 }
 
 void AGsPlayer::UpdateDash(float DeltaSeconds)

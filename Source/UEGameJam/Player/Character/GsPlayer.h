@@ -8,6 +8,7 @@
 #include "GsPlayer.generated.h"
 
 class UBoxComponent;
+class UAudioComponent;
 class UCameraComponent;
 class UInputComponent;
 class UNiagaraComponent;
@@ -144,6 +145,9 @@ protected:
 	/** 上一帧脚步声是否使用墙跑节奏 */
 	bool bWasWallRunFootstepSound = false;
 
+	/** 当前滑铲循环音效组件 */
+	TObjectPtr<UAudioComponent> SlideLoopSoundComponent;
+
 	/** 当前是否按住滑铲输入 */
 	bool bIsSlideInputHeld = false;
 
@@ -198,14 +202,8 @@ protected:
 	/** 最近一次安全落地点朝向 */
 	FRotator LastSafeRotation = FRotator::ZeroRotator;
 
-	/** 是否已经记录了可回传的安全落地点 */
+	/** 是否已经记录了可用于复活的安全落地点 */
 	bool bHasSafeLocation = false;
-
-	/** 是否正在执行深坑回传，避免重复进入 */
-	bool bIsRecoveringFromFall = false;
-
-	/** 最近一次深坑回传发生的时间 */
-	float LastFallRecoveryTime = -1.0f;
 
 	/** 是否已进入起跳后的墙跑检测阶段 */
 	bool bCanCheckWallRun = false;
@@ -335,6 +333,9 @@ protected:
 	/** 输入系统回调：死亡后确认复活 */
 	void DoRespawn();
 
+	/** 输入系统回调：打开或关闭暂停界面 */
+	void DoTogglePauseMenu();
+
 	/** 当前是否处于平台边缘宽限跳跃窗口 */
 	bool CanUseCoyoteJump() const;
 
@@ -444,6 +445,12 @@ protected:
 	/** 在玩家当前位置播放一次脚步声 */
 	void PlayFootstepSound();
 
+	/** 开始播放滑铲循环音效 */
+	void StartSlideLoopSound();
+
+	/** 停止并移除滑铲循环音效 */
+	void StopSlideLoopSound();
+
 	/** 每帧推进冲刺位移并处理碰撞与结束条件 */
 	void UpdateDash(float DeltaSeconds);
 
@@ -524,9 +531,6 @@ protected:
 
 	/** 更新最近一次安全落地点 */
 	void UpdateSafeLandingTransform();
-
-	/** 触发深坑回传 */
-	void RecoverFromDeepFall();
 
 	/** 开始一次近战攻击 */
 	bool StartMeleeAttack();

@@ -21,6 +21,8 @@ public:
 
 	APlayerCharacterController();
 
+	void TogglePauseMenu();
+
 protected:
 	/** 默认启用的输入映射，上线后可在蓝图里挂载键鼠和手柄方案 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Input Mappings")

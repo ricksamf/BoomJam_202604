@@ -8,6 +8,7 @@
 
 class UProgressBar;
 class AGsPlayer;
+class UGsPauseMenuUI;
 class UWidget;
 
 /**
@@ -21,6 +22,15 @@ class UEGAMEJAM_API UPlayerUI : public UUserWidget
 public:
 	void BindPlayer(AGsPlayer* InPlayer);
 
+	UFUNCTION(BlueprintCallable, Category="Player UI|Pause")
+	void ShowPauseMenu();
+
+	UFUNCTION(BlueprintCallable, Category="Player UI|Pause")
+	void HidePauseMenu();
+
+	UFUNCTION(BlueprintCallable, Category="Player UI|Pause")
+	void TogglePauseMenu();
+
 protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeDestruct() override;
@@ -31,6 +41,10 @@ protected:
 	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UProgressBar> SkillCd;
+
+	/** 暂停界面根节点，需要在 Widget 蓝图中命名为 PauseWidget */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UGsPauseMenuUI> PauseWidget;
 
 private:
 	UPROPERTY(Transient)

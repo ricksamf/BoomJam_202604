@@ -62,6 +62,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Enemy|Death")
 	TArray<TObjectPtr<USoundBase>> DeathSounds;
 
+	/** 头顶 UI 的可视范围(cm)。玩家位置距敌人 ≤ 该值才显示 IndicatorWidget;
+	 *  ≤ 0 表示不限距离(永远显示,等同关闭距离过滤)。 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Enemy|UI", meta=(ClampMin=0, Units="cm"))
+	float IndicatorVisibleRange = 1500.f;
+
+	/** UI 可见性检测周期(秒)。0.2s 流畅且开销低;调到很小会增加每帧 Tick。 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Enemy|UI", meta=(ClampMin=0.05))
+	float IndicatorVisibilityCheckInterval = 0.2f;
+
 	/** 重生归属 Checkpoint 编号。复活规则：玩家死亡后，仅当本字段 **严格大于** 玩家当前 CheckpointIndex 时复活。
 	 *  -1 = 让 RespawnSubsystem 在 BeginPlay 阶段按"距离最近的 RespawnPoint"自动推断；想精确控制就在编辑器细节面板里填正数。
 	 *  典型用法：把 Boss/特殊敌设成下一个段的 Checkpoint 编号，让玩家在当前段死亡不会让 Boss 复活。 */
@@ -134,4 +143,10 @@ protected:
 
 	/** "Fire" Notify 触发时的回调,默认空操作。Pistol/MG override 来 spawn 子弹。 */
 	virtual void HandleFireNotify() {}
+
+	/** 周期更新 IndicatorWidget 可见性(基于玩家与敌人的距离 vs IndicatorVisibleRange) */
+	UFUNCTION()
+	void UpdateIndicatorVisibility();
+
+	FTimerHandle IndicatorVisibilityTimer;
 };

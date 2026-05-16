@@ -10,11 +10,6 @@ static const FName MainMenuLevelName = TEXT("LEVEL_MainMenu");
 
 void UGsPauseMenuUI::ShowPauseMenu()
 {
-	if (bIsPauseMenuVisible)
-	{
-		return;
-	}
-
 	bIsPauseMenuVisible = true;
 	SetVisibility(ESlateVisibility::Visible);
 
@@ -75,8 +70,8 @@ void UGsPauseMenuUI::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	bIsPauseMenuVisible = false;
-	SetVisibility(ESlateVisibility::Hidden);
+	bIsPauseMenuVisible = true;
+	//SetVisibility(ESlateVisibility::Hidden);
 
 	if (ResumeButton)
 	{

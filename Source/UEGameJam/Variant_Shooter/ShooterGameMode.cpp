@@ -11,10 +11,6 @@ void AShooterGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// create the UI
-	ShooterUI = CreateWidget<UShooterUI>(UGameplayStatics::GetPlayerController(GetWorld(), 0), ShooterUIClass);
-	ShooterUI->AddToViewport(0);
-	
 	if (UBgmSubsystem* BgmSubsystem = UBgmSubsystem::Get(this))
 	{
 		BgmSubsystem->PlayCombatBGM(ERealmType::Surface);
@@ -43,7 +39,4 @@ void AShooterGameMode::IncrementTeamScore(uint8 TeamByte)
 	// increment the score for the given team
 	++Score;
 	TeamScores.Add(TeamByte, Score);
-
-	// update the UI
-	ShooterUI->BP_UpdateScore(TeamByte, Score);
 }

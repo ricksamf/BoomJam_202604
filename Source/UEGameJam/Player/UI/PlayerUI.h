@@ -42,9 +42,12 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UProgressBar> SkillCd;
 
-	/** 暂停界面根节点，需要在 Widget 蓝图中命名为 PauseWidget */
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UGsPauseMenuUI> PauseWidget;
+	/** 暂停界面*/
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UGsPauseMenuUI> PauseWidget;
+	
+	UPROPERTY()
+	TObjectPtr<UGsPauseMenuUI> NewPauseWidget;
 
 private:
 	UPROPERTY(Transient)

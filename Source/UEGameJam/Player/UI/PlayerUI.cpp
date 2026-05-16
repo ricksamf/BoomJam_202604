@@ -4,6 +4,7 @@
 
 #include "Components/ProgressBar.h"
 #include "Components/Widget.h"
+#include "Kismet/GameplayStatics.h"
 #include "Player/Character/GsPlayer.h"
 #include "Player/UI/GsPauseMenuUI.h"
 
@@ -37,23 +38,31 @@ void UPlayerUI::ShowPauseMenu()
 {
 	if (PauseWidget)
 	{
-		PauseWidget->ShowPauseMenu();
+		NewPauseWidget = CreateWidget<UGsPauseMenuUI>(UGameplayStatics::GetPlayerController(GetWorld(), 0), PauseWidget);
+		NewPauseWidget->AddToViewport(10);
+		
+		NewPauseWidget->ShowPauseMenu();
 	}
 }
 
 void UPlayerUI::HidePauseMenu()
 {
-	if (PauseWidget)
+	if (NewPauseWidget)
 	{
-		PauseWidget->HidePauseMenu();
+		NewPauseWidget->RemoveFromParent();
+		NewPauseWidget = nullptr;
 	}
 }
 
 void UPlayerUI::TogglePauseMenu()
 {
-	if (PauseWidget)
+	if (NewPauseWidget)
 	{
-		PauseWidget->TogglePauseMenu();
+		HidePauseMenu();
+	}
+	else
+	{
+		ShowPauseMenu();
 	}
 }
 
@@ -66,9 +75,10 @@ void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void UPlayerUI::NativeDestruct()
 {
-	if (PauseWidget)
+	if (NewPauseWidget)
 	{
-		PauseWidget->HidePauseMenu();
+		NewPauseWidget->RemoveFromParent();
+		NewPauseWidget = nullptr;
 	}
 
 	if (BoundPlayer)

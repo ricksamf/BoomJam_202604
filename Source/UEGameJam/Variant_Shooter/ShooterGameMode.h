@@ -24,9 +24,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Shooter")
 	TSubclassOf<UShooterUI> ShooterUIClass;
 
-	/** Pointer to the UI widget */
-	TObjectPtr<UShooterUI> ShooterUI;
-
 	/** Map of scores by team ID */
 	TMap<uint8, int32> TeamScores;
 

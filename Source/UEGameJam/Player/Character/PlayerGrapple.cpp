@@ -170,7 +170,7 @@ void AGsPlayer::FinishGrapple()
 	}
 
 	ClearGrappleState();
-	TryStartAirborneWallRunDetection();
+	RefreshWallRunDetectionAfterGrapple();
 }
 
 void AGsPlayer::AbortGrapple()

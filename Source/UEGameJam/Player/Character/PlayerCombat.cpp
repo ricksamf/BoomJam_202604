@@ -64,7 +64,8 @@ bool AGsPlayer::StartMeleeAttack()
 		}
 	}
 
-	if (!TryStartCharacterAction(EUEGameJamPlayerAction::MeleeAttack, ActionDuration))
+	const bool bShouldBypassMeleeAction = IsSliding();
+	if (!bShouldBypassMeleeAction && !TryStartCharacterAction(EUEGameJamPlayerAction::MeleeAttack, ActionDuration))
 	{
 		return false;
 	}

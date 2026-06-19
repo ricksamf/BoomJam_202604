@@ -108,6 +108,18 @@ bool AGsPlayer::TryStartAirborneWallRunDetection()
 	return true;
 }
 
+void AGsPlayer::RefreshWallRunDetectionAfterGrapple()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(WallRunDetectionDelayTimer);
+	}
+
+	bCanCheckWallRun = false;
+	bHasTriggeredWallRunThisJump = false;
+	TryStartAirborneWallRunDetection();
+}
+
 void AGsPlayer::UpdateWallRunDetection()
 {
 	if (!bCanCheckWallRun || bHasTriggeredWallRunThisJump || bIsDead)

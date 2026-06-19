@@ -479,6 +479,9 @@ protected:
 	/** 在已经处于空中且没有其他动作占用时尝试开启墙跑检测 */
 	bool TryStartAirborneWallRunDetection();
 
+	/** 钩索完成后刷新墙跑资格，允许进入新的空中跑酷段 */
+	void RefreshWallRunDetectionAfterGrapple();
+
 	/** 每帧检测是否满足墙跑触发条件 */
 	void UpdateWallRunDetection();
 

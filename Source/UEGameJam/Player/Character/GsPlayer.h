@@ -476,6 +476,9 @@ protected:
 	/** 重置本次腾空的墙跑检测状态 */
 	void ResetWallRunDetection();
 
+	/** 在已经处于空中且没有其他动作占用时尝试开启墙跑检测 */
+	bool TryStartAirborneWallRunDetection();
+
 	/** 每帧检测是否满足墙跑触发条件 */
 	void UpdateWallRunDetection();
 

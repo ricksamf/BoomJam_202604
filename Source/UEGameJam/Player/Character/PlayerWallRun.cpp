@@ -87,6 +87,27 @@ void AGsPlayer::ResetWallRunDetection()
 	bHasTriggeredWallRunThisJump = false;
 }
 
+bool AGsPlayer::TryStartAirborneWallRunDetection()
+{
+	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
+	if (bIsDead
+		|| bCanCheckWallRun
+		|| bHasTriggeredWallRunThisJump
+		|| !PlayerMovementComponent
+		|| !PlayerMovementComponent->IsFalling()
+		|| IsSliding()
+		|| IsDashing()
+		|| bIsFalculaLaunching
+		|| IsLedgeClimbing()
+		|| IsWallRunning())
+	{
+		return false;
+	}
+
+	StartWallRunDetectionDelay();
+	return true;
+}
+
 void AGsPlayer::UpdateWallRunDetection()
 {
 	if (!bCanCheckWallRun || bHasTriggeredWallRunThisJump || bIsDead)

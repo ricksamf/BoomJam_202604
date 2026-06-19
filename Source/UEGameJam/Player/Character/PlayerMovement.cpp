@@ -370,6 +370,7 @@ void AGsPlayer::UpdateSlide(float DeltaSeconds)
 	if (!PlayerMovementComponent->IsMovingOnGround())
 	{
 		StopSlide(true);
+		TryStartAirborneWallRunDetection();
 		return;
 	}
 

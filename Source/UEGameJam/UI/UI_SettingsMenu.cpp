@@ -7,6 +7,7 @@
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "GameFramework/GameUserSettings.h"
+#include "Kismet/GameplayStatics.h"
 #include "Player/Game/GsPlayerSaveGame.h"
 #include "UI_SettingsWidget.h"
 
@@ -248,6 +249,24 @@ void UUI_SettingsMenu::NativeConstruct()
 		BackBtn->OnClicked.RemoveDynamic(this, &UUI_SettingsMenu::HandleBackClicked);
 		BackBtn->OnClicked.AddDynamic(this, &UUI_SettingsMenu::HandleBackClicked);
 	}
+
+	if (Level1)
+	{
+		Level1->OnClicked.RemoveDynamic(this, &UUI_SettingsMenu::HandleLevel1Clicked);
+		Level1->OnClicked.AddDynamic(this, &UUI_SettingsMenu::HandleLevel1Clicked);
+	}
+
+	if (Level2)
+	{
+		Level2->OnClicked.RemoveDynamic(this, &UUI_SettingsMenu::HandleLevel2Clicked);
+		Level2->OnClicked.AddDynamic(this, &UUI_SettingsMenu::HandleLevel2Clicked);
+	}
+
+	if (Level3)
+	{
+		Level3->OnClicked.RemoveDynamic(this, &UUI_SettingsMenu::HandleLevel3Clicked);
+		Level3->OnClicked.AddDynamic(this, &UUI_SettingsMenu::HandleLevel3Clicked);
+	}
 }
 
 void UUI_SettingsMenu::HandleWindowModeChanged(int32 NewIndex, const FText& NewText)
@@ -305,6 +324,22 @@ void UUI_SettingsMenu::HandleSoundChanged(int32 NewIndex, const FText& NewText)
 void UUI_SettingsMenu::HandleBackClicked()
 {
 	RemoveFromParent();
+	OnSettingsMenuClosed.Broadcast();
+}
+
+void UUI_SettingsMenu::HandleLevel1Clicked()
+{
+	UGameplayStatics::OpenLevel(this, FName(TEXT("Level_NoWhiteBox")));
+}
+
+void UUI_SettingsMenu::HandleLevel2Clicked()
+{
+	UGameplayStatics::OpenLevel(this, FName(TEXT("LEVEL_002")));
+}
+
+void UUI_SettingsMenu::HandleLevel3Clicked()
+{
+	UGameplayStatics::OpenLevel(this, FName(TEXT("Level_003")));
 }
 
 void UUI_SettingsMenu::SaveCurrentVolumes() const

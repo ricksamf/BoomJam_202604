@@ -9,6 +9,8 @@
 class UButton;
 class UUI_SettingsWidget;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSettingsMenuClosed);
+
 /**
  * 设置界面
  */
@@ -16,6 +18,11 @@ UCLASS()
 class UEGAMEJAM_API UUI_SettingsMenu : public UUserWidget
 {
 	GENERATED_BODY()
+
+public:
+	/** 设置界面点击返回并关闭时触发 */
+	UPROPERTY(BlueprintAssignable, Category="Settings")
+	FOnSettingsMenuClosed OnSettingsMenuClosed;
 
 protected:
 	virtual void NativeConstruct() override;
@@ -46,6 +53,18 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UButton> BackBtn;
 
+	/** 第一关按钮 */
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UButton> Level1;
+
+	/** 第二关按钮 */
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UButton> Level2;
+
+	/** 第三关按钮 */
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UButton> Level3;
+
 private:
 	UFUNCTION()
 	void HandleWindowModeChanged(int32 NewIndex, const FText& NewText);
@@ -67,6 +86,15 @@ private:
 
 	UFUNCTION()
 	void HandleBackClicked();
+
+	UFUNCTION()
+	void HandleLevel1Clicked();
+
+	UFUNCTION()
+	void HandleLevel2Clicked();
+
+	UFUNCTION()
+	void HandleLevel3Clicked();
 
 	void SaveCurrentVolumes() const;
 	TArray<FIntPoint> BuildResolutionOptions() const;

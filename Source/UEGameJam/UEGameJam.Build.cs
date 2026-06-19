@@ -21,6 +21,8 @@ public class UEGameJam : ModuleRules
 			"GameplayStateTreeModule",
 			"UMG",
 			"Slate",
+			"SlateCore",
+			"MediaAssets",
 			"Niagara",
 			"DeveloperSettings"
 		});

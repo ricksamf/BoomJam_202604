@@ -170,6 +170,7 @@ void AGsPlayer::FinishGrapple()
 	}
 
 	ClearGrappleState();
+	bHasDashedSinceLanded = false;
 	RefreshWallRunDetectionAfterGrapple();
 }
 

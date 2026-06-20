@@ -346,6 +346,7 @@ bool AGsPlayer::StartWallRun(const FVector& WallNormal)
 	WallRunDirection = NewWallRunDirection;
 	WallRunSurfaceNormal = HorizontalWallNormal;
 	bHasTriggeredWallRunThisJump = true;
+	bHasDashedSinceLanded = false;
 	bCanCheckWallRun = false;
 	SetWallRunCameraTiltTarget(bIsRightWall ? -PlayerTuning.WallRunCameraTiltAngle : PlayerTuning.WallRunCameraTiltAngle);
 

@@ -37,6 +37,9 @@ struct FEnemyRespawnRecord
 
 	/** 调试用：原 actor 名 */
 	UPROPERTY()
+	bool bRespawnEnabled = true;
+
+	UPROPERTY()
 	FName SourceName;
 };
 
@@ -64,6 +67,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Enemy|Respawn")
 	void RespawnAllDead();
 
+	UFUNCTION(BlueprintCallable, Category="Enemy|Respawn")
+	void SetRespawnEnabled(bool bEnabled);
+
+	UFUNCTION(BlueprintPure, Category="Enemy|Respawn")
+	bool IsRespawnEnabled() const { return bRespawnEnabled; }
+
+	UFUNCTION(BlueprintCallable, Category="Enemy|Respawn")
+	void DisableRespawnForCheckpoint(int32 CheckpointIndex);
+
+	UFUNCTION(BlueprintCallable, Category="Enemy|Respawn", meta=(WorldContext="WorldContext", DisplayName="Set Enemy Respawn Enabled"))
+	static void SetEnemyRespawnEnabled(const UObject* WorldContext, bool bEnabled);
+
+	UFUNCTION(BlueprintCallable, Category="Enemy|Respawn", meta=(WorldContext="WorldContext", DisplayName="Disable Enemy Respawn For Checkpoint"))
+	static void DisableEnemyRespawnForCheckpoint(const UObject* WorldContext, int32 CheckpointIndex);
+
 	/** 调试：打印当前 Record 列表 */
 	UFUNCTION(Exec, Category="Enemy|Respawn")
 	void EnemyRespawnDump() const;
@@ -71,6 +89,9 @@ public:
 private:
 	UPROPERTY()
 	TArray<FEnemyRespawnRecord> Records;
+
+	UPROPERTY()
+	bool bRespawnEnabled = true;
 
 	UFUNCTION()
 	void HandlePlayerRespawn();

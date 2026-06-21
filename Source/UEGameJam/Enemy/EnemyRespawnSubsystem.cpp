@@ -77,6 +77,12 @@ void UEnemyRespawnSubsystem::MarkDead(int32 RecordId)
 
 void UEnemyRespawnSubsystem::RespawnAllDead()
 {
+	if (!bRespawnEnabled)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[EnemyRespawn] RespawnAllDead skipped: respawn disabled"));
+		return;
+	}
+
 	UWorld* World = GetWorld();
 	if (!World)
 	{
@@ -98,6 +104,12 @@ void UEnemyRespawnSubsystem::RespawnAllDead()
 		FEnemyRespawnRecord& Rec = Records[i];
 		if (!Rec.bIsDead || !Rec.EnemyClass)
 		{
+			continue;
+		}
+
+		if (!Rec.bRespawnEnabled)
+		{
+			++SkippedCount;
 			continue;
 		}
 
@@ -130,6 +142,46 @@ void UEnemyRespawnSubsystem::RespawnAllDead()
 
 	UE_LOG(LogTemp, Log, TEXT("[EnemyRespawn] RespawnAllDead: respawned=%d skipped=%d (CurrentCP=%d)"),
 		RespawnedCount, SkippedCount, CurrentCheckpoint);
+}
+
+void UEnemyRespawnSubsystem::SetRespawnEnabled(bool bEnabled)
+{
+	bRespawnEnabled = bEnabled;
+
+	UE_LOG(LogTemp, Log, TEXT("[EnemyRespawn] Respawn enabled set to %d"), bRespawnEnabled ? 1 : 0);
+}
+
+void UEnemyRespawnSubsystem::DisableRespawnForCheckpoint(int32 CheckpointIndex)
+{
+	int32 DisabledCount = 0;
+	for (FEnemyRespawnRecord& Rec : Records)
+	{
+		if (Rec.OwningCheckpoint == CheckpointIndex && Rec.bRespawnEnabled)
+		{
+			Rec.bRespawnEnabled = false;
+			Rec.bIsDead = false;
+			++DisabledCount;
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[EnemyRespawn] Disabled respawn for checkpoint %d: records=%d"),
+		CheckpointIndex, DisabledCount);
+}
+
+void UEnemyRespawnSubsystem::SetEnemyRespawnEnabled(const UObject* WorldContext, bool bEnabled)
+{
+	if (UEnemyRespawnSubsystem* RespawnSubsystem = Get(WorldContext))
+	{
+		RespawnSubsystem->SetRespawnEnabled(bEnabled);
+	}
+}
+
+void UEnemyRespawnSubsystem::DisableEnemyRespawnForCheckpoint(const UObject* WorldContext, int32 CheckpointIndex)
+{
+	if (UEnemyRespawnSubsystem* RespawnSubsystem = Get(WorldContext))
+	{
+		RespawnSubsystem->DisableRespawnForCheckpoint(CheckpointIndex);
+	}
 }
 
 void UEnemyRespawnSubsystem::HandlePlayerRespawn()
@@ -173,7 +225,7 @@ void UEnemyRespawnSubsystem::EnemyRespawnDump() const
 	for (int32 i = 0; i < Records.Num(); ++i)
 	{
 		const FEnemyRespawnRecord& R = Records[i];
-		UE_LOG(LogTemp, Log, TEXT("  [%d] Class=%s  CP=%d  Dead=%d  Src=%s"),
-			i, *GetNameSafe(R.EnemyClass), R.OwningCheckpoint, R.bIsDead ? 1 : 0, *R.SourceName.ToString());
+		UE_LOG(LogTemp, Log, TEXT("  [%d] Class=%s  CP=%d  Dead=%d  Respawn=%d  Src=%s"),
+			i, *GetNameSafe(R.EnemyClass), R.OwningCheckpoint, R.bIsDead ? 1 : 0, R.bRespawnEnabled ? 1 : 0, *R.SourceName.ToString());
 	}
 }

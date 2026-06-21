@@ -25,9 +25,26 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Respawn Point", meta = (ClampMin = 0))
 	int32 CheckpointIndex = 0;
 
+	/** 每个死亡次数对应的复活提示文本，键为当前复活点累计死亡次数 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Respawn Point|Hint")
+	TMap<int32, FText> DeathHintsByCount;
+
+	/** 玩家在当前复活点累计死亡次数 */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Respawn Point|Hint")
+	int32 DeathCount = 0;
+
 public:
 	AGsRespawnPoint();
 
 	UFUNCTION(BlueprintPure, Category="Respawn Point")
 	int32 GetCheckpointIndex() const { return CheckpointIndex; }
+
+	UFUNCTION(BlueprintCallable, Category="Respawn Point|Hint")
+	int32 RegisterPlayerDeath();
+
+	UFUNCTION(BlueprintPure, Category="Respawn Point|Hint")
+	bool GetHintForDeathCount(int32 InDeathCount, FText& OutHintText) const;
+
+	UFUNCTION(BlueprintPure, Category="Respawn Point|Hint")
+	int32 GetDeathCount() const { return DeathCount; }
 };

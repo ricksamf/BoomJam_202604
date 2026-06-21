@@ -9,6 +9,7 @@
 class UProgressBar;
 class AGsPlayer;
 class UGsPauseMenuUI;
+class UGsRespawnHintUI;
 class UWidget;
 
 /**
@@ -45,9 +46,16 @@ protected:
 	/** 暂停界面*/
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UGsPauseMenuUI> PauseWidget;
+
+	/** 复活后显示的提示 UI 蓝图类 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Player UI|Respawn Hint")
+	TSubclassOf<UGsRespawnHintUI> RespawnHintWidgetClass;
 	
 	UPROPERTY()
 	TObjectPtr<UGsPauseMenuUI> NewPauseWidget;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UGsRespawnHintUI> RespawnHintWidget;
 
 private:
 	UPROPERTY(Transient)
@@ -59,6 +67,10 @@ private:
 	UFUNCTION()
 	void HandlePlayerRespawn();
 
+	UFUNCTION()
+	void HandlePlayerRespawnHint(const FText& HintText);
+
 	void SetDeathWidgetVisible(bool bVisible);
 	void UpdateSkillCooldown();
+	void ShowRespawnHint(const FText& HintText);
 };

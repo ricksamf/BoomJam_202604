@@ -36,6 +36,7 @@ bool AGsLevelStateGameState::ActivateCheckpointByIndex(int32 CheckpointIndex)
 
 	CurrentCheckpointIndex = CheckpointIndex;
 	CurrentRespawnTransform = RespawnPoint->GetActorTransform();
+	CurrentRespawnPoint = RespawnPoint;
 	bHasRespawnTransform = true;
 	return true;
 }
@@ -60,7 +61,21 @@ void AGsLevelStateGameState::EnsureFallbackRespawnTransform(const FTransform& Fa
 
 	CurrentCheckpointIndex = INDEX_NONE;
 	CurrentRespawnTransform = FallbackTransform;
+	CurrentRespawnPoint = nullptr;
 	bHasRespawnTransform = true;
+}
+
+bool AGsLevelStateGameState::RegisterDeathAtCurrentRespawnPoint(FText& OutHintText)
+{
+	OutHintText = FText::GetEmpty();
+
+	if (!IsValid(CurrentRespawnPoint))
+	{
+		return false;
+	}
+
+	const int32 DeathCount = CurrentRespawnPoint->RegisterPlayerDeath();
+	return CurrentRespawnPoint->GetHintForDeathCount(DeathCount, OutHintText);
 }
 
 void AGsLevelStateGameState::CacheRespawnPoints()

@@ -28,6 +28,10 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Level State|Respawn")
 	FTransform CurrentRespawnTransform = FTransform::Identity;
 
+	/** 当前死亡后使用的复活点实例 */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Level State|Respawn")
+	TObjectPtr<AGsRespawnPoint> CurrentRespawnPoint;
+
 	/** 是否已经记录可用的复活位置 */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Level State|Respawn")
 	bool bHasRespawnTransform = false;
@@ -50,6 +54,10 @@ public:
 	/** 在没有场景复活点时，使用传入位置作为兜底复活点 */
 	UFUNCTION(BlueprintCallable, Category="Level State|Respawn")
 	void EnsureFallbackRespawnTransform(const FTransform& FallbackTransform);
+
+	/** 记录一次当前复活点死亡，并返回本次死亡次数对应的提示文本 */
+	UFUNCTION(BlueprintCallable, Category="Level State|Respawn")
+	bool RegisterDeathAtCurrentRespawnPoint(FText& OutHintText);
 
 	/** 获取当前已激活的复活点编号 */
 	UFUNCTION(BlueprintPure, Category="Level State|Respawn")

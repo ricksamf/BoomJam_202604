@@ -21,6 +21,7 @@ struct FInputActionValue;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUEGameJamPlayerDamagedDelegate, float, LifePercent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUEGameJamPlayerDeathDelegate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUEGameJamPlayerRespawnDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUEGameJamPlayerRespawnHintDelegate, const FText&, HintText);
 
 UENUM(BlueprintType)
 enum class EUEGameJamPlayerAction : uint8
@@ -205,6 +206,12 @@ protected:
 	/** 是否已经记录了可用于复活的安全落地点 */
 	bool bHasSafeLocation = false;
 
+	/** 本次死亡后复活时要显示的提示文本 */
+	FText PendingRespawnHintText;
+
+	/** 本次死亡后复活时是否有可显示的提示文本 */
+	bool bHasPendingRespawnHint = false;
+
 	/** 是否已进入起跳后的墙跑检测阶段 */
 	bool bCanCheckWallRun = false;
 
@@ -299,6 +306,10 @@ public:
 	/** 玩家复活委托 */
 	UPROPERTY(BlueprintAssignable, Category="Health")
 	FUEGameJamPlayerRespawnDelegate OnRespawn;
+
+	/** 玩家复活后提示委托 */
+	UPROPERTY(BlueprintAssignable, Category="Health")
+	FUEGameJamPlayerRespawnHintDelegate OnRespawnHint;
 
 public:
 

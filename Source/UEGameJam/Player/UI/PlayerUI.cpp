@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Player/Character/GsPlayer.h"
 #include "Player/UI/GsPauseMenuUI.h"
+#include "Player/UI/GsRespawnHintUI.h"
 
 void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 {
@@ -14,6 +15,7 @@ void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 	{
 		BoundPlayer->OnDeath.RemoveDynamic(this, &UPlayerUI::HandlePlayerDeath);
 		BoundPlayer->OnRespawn.RemoveDynamic(this, &UPlayerUI::HandlePlayerRespawn);
+		BoundPlayer->OnRespawnHint.RemoveDynamic(this, &UPlayerUI::HandlePlayerRespawnHint);
 	}
 
 	BoundPlayer = InPlayer;
@@ -27,6 +29,7 @@ void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 
 	BoundPlayer->OnDeath.AddDynamic(this, &UPlayerUI::HandlePlayerDeath);
 	BoundPlayer->OnRespawn.AddDynamic(this, &UPlayerUI::HandlePlayerRespawn);
+	BoundPlayer->OnRespawnHint.AddDynamic(this, &UPlayerUI::HandlePlayerRespawnHint);
 	if (BoundPlayer->IsDead())
 	{
 		HandlePlayerDeath();
@@ -81,10 +84,17 @@ void UPlayerUI::NativeDestruct()
 		NewPauseWidget = nullptr;
 	}
 
+	if (RespawnHintWidget)
+	{
+		RespawnHintWidget->RemoveFromParent();
+		RespawnHintWidget = nullptr;
+	}
+
 	if (BoundPlayer)
 	{
 		BoundPlayer->OnDeath.RemoveDynamic(this, &UPlayerUI::HandlePlayerDeath);
 		BoundPlayer->OnRespawn.RemoveDynamic(this, &UPlayerUI::HandlePlayerRespawn);
+		BoundPlayer->OnRespawnHint.RemoveDynamic(this, &UPlayerUI::HandlePlayerRespawnHint);
 		BoundPlayer = nullptr;
 	}
 
@@ -101,6 +111,11 @@ void UPlayerUI::HandlePlayerRespawn()
 	SetDeathWidgetVisible(false);
 }
 
+void UPlayerUI::HandlePlayerRespawnHint(const FText& HintText)
+{
+	ShowRespawnHint(HintText);
+}
+
 void UPlayerUI::SetDeathWidgetVisible(bool bVisible)
 {
 	if (DeathWidget)
@@ -114,5 +129,34 @@ void UPlayerUI::UpdateSkillCooldown()
 	if (SkillCd)
 	{
 		SkillCd->SetPercent(BoundPlayer ? BoundPlayer->GetSkillCooldownPercent() : 1.0f);
+	}
+}
+
+void UPlayerUI::ShowRespawnHint(const FText& HintText)
+{
+	if (HintText.IsEmpty() || !RespawnHintWidgetClass)
+	{
+		return;
+	}
+
+	if (!RespawnHintWidget)
+	{
+		if (!GetOwningPlayer())
+		{
+			return;
+		}
+
+		RespawnHintWidget = CreateWidget<UGsRespawnHintUI>(GetOwningPlayer(), RespawnHintWidgetClass);
+	}
+
+	if (RespawnHintWidget && !RespawnHintWidget->IsInViewport())
+	{
+		RespawnHintWidget->AddToPlayerScreen(1);
+	}
+
+	if (RespawnHintWidget)
+	{
+		RespawnHintWidget->SetVisibility(ESlateVisibility::Visible);
+		RespawnHintWidget->SetHintText(HintText);
 	}
 }

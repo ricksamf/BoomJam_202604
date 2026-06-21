@@ -21,6 +21,8 @@ void AGsPlayer::Die()
 	bIsWaitingForRespawnInput = true;
 	bIsDeathTimeDilationActive = true;
 	DeathTimeDilationElapsed = 0.0f;
+	bHasPendingRespawnHint = false;
+	PendingRespawnHintText = FText::GetEmpty();
 	bResetFirstPersonCameraLocationOnNextUpdate = true;
 	FinishMeleeHitStop();
 
@@ -57,6 +59,11 @@ void AGsPlayer::Die()
 	{
 		World->GetTimerManager().ClearTimer(MeleeHitTimer);
 		World->GetTimerManager().ClearTimer(MeleeHitStopTimer);
+
+		if (AGsLevelStateGameState* LevelState = World->GetGameState<AGsLevelStateGameState>())
+		{
+			bHasPendingRespawnHint = LevelState->RegisterDeathAtCurrentRespawnPoint(PendingRespawnHintText);
+		}
 	}
 
 	if (UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement())
@@ -160,4 +167,11 @@ void AGsPlayer::ResetForRespawn(const FTransform& RespawnTransform)
 	UGameplayStatics::SetGlobalTimeDilation(this, 1.0f);
 	OnDamaged.Broadcast(GetLifePercent());
 	OnRespawn.Broadcast();
+
+	if (bHasPendingRespawnHint)
+	{
+		OnRespawnHint.Broadcast(PendingRespawnHintText);
+		bHasPendingRespawnHint = false;
+		PendingRespawnHintText = FText::GetEmpty();
+	}
 }

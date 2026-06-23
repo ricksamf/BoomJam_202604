@@ -2,6 +2,7 @@
 
 #include "PlayerUI.h"
 
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/Widget.h"
 #include "Kismet/GameplayStatics.h"
@@ -21,6 +22,7 @@ void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 	BoundPlayer = InPlayer;
 	SetDeathWidgetVisible(false);
 	UpdateSkillCooldown();
+	UpdateDashImage();
 
 	if (!BoundPlayer)
 	{
@@ -35,6 +37,7 @@ void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 		HandlePlayerDeath();
 	}
 	UpdateSkillCooldown();
+	UpdateDashImage();
 }
 
 void UPlayerUI::ShowPauseMenu()
@@ -74,6 +77,7 @@ void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
 	UpdateSkillCooldown();
+	UpdateDashImage();
 }
 
 void UPlayerUI::NativeDestruct()
@@ -129,6 +133,14 @@ void UPlayerUI::UpdateSkillCooldown()
 	if (SkillCd)
 	{
 		SkillCd->SetPercent(BoundPlayer ? BoundPlayer->GetSkillCooldownPercent() : 1.0f);
+	}
+}
+
+void UPlayerUI::UpdateDashImage()
+{
+	if (DashImg)
+	{
+		DashImg->SetVisibility(BoundPlayer && BoundPlayer->IsDashAvailable() ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 }
 

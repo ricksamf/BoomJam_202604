@@ -13,6 +13,7 @@ class UMediaSource;
 class UMediaTexture;
 class UTextBlock;
 class UWidget;
+class UUI_Login;
 class UUI_SettingsMenu;
 
 /**
@@ -52,9 +53,17 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Main Menu")
 	TSubclassOf<UUI_SettingsMenu> SettingsWidgetClass;
 
+	/** 登录界面蓝图类，非调试模式点击开始游戏时创建并显示 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Main Menu")
+	TSubclassOf<UUI_Login> LoginWidgetClass;
+
 	/** 当前创建的设置界面实例 */
 	UPROPERTY(Transient)
 	TObjectPtr<UUI_SettingsMenu> SettingsWidget;
+
+	/** 当前创建的登录界面实例 */
+	UPROPERTY(Transient)
+	TObjectPtr<UUI_Login> LoginWidget;
 
 	/** 主菜单停留多久后自动播放吸引模式视频，单位秒 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Main Menu|Attract", meta=(ClampMin="0.0"))
@@ -119,6 +128,9 @@ private:
 	UMediaPlayer* GetAttractMediaPlayer();
 	void PrepareAttractVideoImage();
 	void BindSettingsClosed();
+	void ShowLoginWidget();
+	void OpenStartLevel() const;
+	bool IsDebugStartEnabled() const;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UMediaPlayer> RuntimeAttractMediaPlayer;

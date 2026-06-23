@@ -7,6 +7,7 @@
 #include "PlayerUI.generated.h"
 
 class UProgressBar;
+class UImage;
 class AGsPlayer;
 class UGsPauseMenuUI;
 class UGsRespawnHintUI;
@@ -43,6 +44,10 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UProgressBar> SkillCd;
 
+	/** 冲刺可用时显示的图标，需要在 Widget 蓝图中命名为 DashImg */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UImage> DashImg;
+
 	/** 暂停界面*/
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UGsPauseMenuUI> PauseWidget;
@@ -72,5 +77,6 @@ private:
 
 	void SetDeathWidgetVisible(bool bVisible);
 	void UpdateSkillCooldown();
+	void UpdateDashImage();
 	void ShowRespawnHint(const FText& HintText);
 };

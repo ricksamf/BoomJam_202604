@@ -7,6 +7,7 @@
 #include "GsProjectResourceSettings.generated.h"
 
 class UAudioDataAsset;
+class UDataTable;
 class USoundClass;
 
 /**
@@ -31,4 +32,12 @@ public:
 	/** 音效声音分类，用于设置菜单统一调节战斗和操作音效音量 */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Audio")
 	TSoftObjectPtr<USoundClass> SFXSoundClass;
+
+	/** 登录界面词库表，用于配置随机名字和违禁词 */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Login")
+	TSoftObjectPtr<UDataTable> LoginWordTable;
+
+	/** 调试模式下跳过登录界面，主菜单点击开始游戏后直接进入关卡 */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Login")
+	bool bDebugSkipLogin = false;
 };

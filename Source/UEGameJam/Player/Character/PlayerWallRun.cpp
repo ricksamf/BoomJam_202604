@@ -85,6 +85,7 @@ void AGsPlayer::ResetWallRunDetection()
 
 	bCanCheckWallRun = false;
 	bHasTriggeredWallRunThisJump = false;
+	ClearWallRunCoyoteState();
 }
 
 bool AGsPlayer::TryStartAirborneWallRunDetection()
@@ -405,6 +406,9 @@ void AGsPlayer::UpdateWallRun(float DeltaSeconds)
 
 void AGsPlayer::StopWallRun()
 {
+	const bool bWasWallRunning = IsWallRunning();
+	const FVector LastWallRunSurfaceNormal = WallRunSurfaceNormal.GetSafeNormal2D();
+
 	SetWallRunCameraTiltTarget(0.0f);
 
 	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
@@ -429,16 +433,59 @@ void AGsPlayer::StopWallRun()
 	PreWallRunMovementMode = MOVE_Falling;
 	PreWallRunCustomMovementMode = 0;
 
-	if (IsWallRunning())
+	if (bWasWallRunning)
 	{
+		if ((!PlayerMovementComponent || !PlayerMovementComponent->IsMovingOnGround()) && !LastWallRunSurfaceNormal.IsNearlyZero())
+		{
+			LastWallRunEndTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+			LastWallRunCoyoteSurfaceNormal = LastWallRunSurfaceNormal;
+		}
+
 		FinishCharacterAction();
 	}
+}
+
+void AGsPlayer::ClearWallRunCoyoteState()
+{
+	LastWallRunEndTime = -BIG_NUMBER;
+	LastWallRunCoyoteSurfaceNormal = FVector::ZeroVector;
+}
+
+bool AGsPlayer::CanUseWallRunCoyoteJump() const
+{
+	const UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
+	if (bIsDead
+		|| !PlayerMovementComponent
+		|| !PlayerMovementComponent->IsFalling()
+		|| IsDashing()
+		|| bIsFalculaLaunching
+		|| IsLedgeClimbing()
+		|| IsSliding()
+		|| LastWallRunCoyoteSurfaceNormal.IsNearlyZero())
+	{
+		return false;
+	}
+
+	const float CoyoteJumpTime = GetPlayerTuning().CoyoteJumpTime;
+	if (CoyoteJumpTime <= KINDA_SMALL_NUMBER)
+	{
+		return false;
+	}
+
+	const UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	return (World->GetTimeSeconds() - LastWallRunEndTime) <= CoyoteJumpTime;
 }
 
 bool AGsPlayer::TryWallRunJump()
 {
 	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
-	if (!IsWallRunning()
+	const bool bUseWallRunCoyoteJump = !IsWallRunning();
+	if ((bUseWallRunCoyoteJump && !CanUseWallRunCoyoteJump())
 		|| bIsDead
 		|| (PlayerTuning.WallRunJumpHorizontalStrength <= 0.0f && PlayerTuning.WallRunJumpVerticalStrength <= 0.0f))
 	{
@@ -446,7 +493,9 @@ bool AGsPlayer::TryWallRunJump()
 	}
 
 	FVector ForwardDirection = GetActorForwardVector().GetSafeNormal2D();
-	const FVector WallJumpOutDirection = WallRunSurfaceNormal.GetSafeNormal2D();
+	const FVector WallJumpOutDirection = bUseWallRunCoyoteJump
+		? LastWallRunCoyoteSurfaceNormal.GetSafeNormal2D()
+		: WallRunSurfaceNormal.GetSafeNormal2D();
 	if (WallJumpOutDirection.IsNearlyZero())
 	{
 		return false;
@@ -466,7 +515,15 @@ bool AGsPlayer::TryWallRunJump()
 		(HorizontalJumpDirection * PlayerTuning.WallRunJumpHorizontalStrength)
 		+ (FVector::UpVector * PlayerTuning.WallRunJumpVerticalStrength);
 
-	StopWallRun();
+	if (bUseWallRunCoyoteJump)
+	{
+		ClearWallRunCoyoteState();
+	}
+	else
+	{
+		StopWallRun();
+	}
+
 	LaunchCharacter(LaunchVelocity, true, true);
 	ResetWallRunDetection();
 	StartWallRunDetectionDelay();

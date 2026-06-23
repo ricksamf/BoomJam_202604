@@ -266,6 +266,12 @@ protected:
 	/** 当前墙跑依附的墙面法线 */
 	FVector WallRunSurfaceNormal = FVector::ZeroVector;
 
+	/** 最近一次离开墙跑状态的世界时间，用于墙跑离墙宽限跳跃 */
+	float LastWallRunEndTime = -BIG_NUMBER;
+
+	/** 最近一次离开墙跑时缓存的墙面法线，用于离墙后短时间内继续墙跳 */
+	FVector LastWallRunCoyoteSurfaceNormal = FVector::ZeroVector;
+
 	/** 进入墙跑前缓存的重力缩放 */
 	float PreWallRunGravityScale = 1.0f;
 
@@ -398,6 +404,9 @@ public:
 	bool IsDashing() const;
 
 	UFUNCTION(BlueprintPure, Category="Action")
+	bool IsDashAvailable() const;
+
+	UFUNCTION(BlueprintPure, Category="Action")
 	bool IsLedgeClimbing() const;
 
 	UFUNCTION(BlueprintPure, Category="Action")
@@ -513,6 +522,12 @@ protected:
 
 	/** 结束当前墙跑并恢复普通空中状态 */
 	void StopWallRun();
+
+	/** 清理墙跑离墙宽限跳跃状态 */
+	void ClearWallRunCoyoteState();
+
+	/** 当前是否处于墙跑离墙后的宽限跳跃窗口 */
+	bool CanUseWallRunCoyoteJump() const;
 
 	/** 尝试从墙跑状态跳出并重新开启墙跑检测延迟 */
 	bool TryWallRunJump();

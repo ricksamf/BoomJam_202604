@@ -4,7 +4,9 @@
 #include "UI_MainMenu.h"
 
 #include "Audio/BgmSubsystem.h"
+#include "Settings/GsProjectResourceSettings.h"
 #include "UI_SettingsMenu.h"
+#include "UI/Rank/UI_Login.h"
 #include "Components/Button.h"
 #include "Components/ContentWidget.h"
 #include "Components/Image.h"
@@ -100,10 +102,13 @@ void UUI_MainMenu::HandleStartClicked()
 {
 	StopIdleTimer();
 
-	if (!StartLevelName.IsNone())
+	if (IsDebugStartEnabled())
 	{
-		UGameplayStatics::OpenLevel(this, StartLevelName);
+		OpenStartLevel();
+		return;
 	}
+
+	ShowLoginWidget();
 }
 
 void UUI_MainMenu::HandleSettingsClicked()
@@ -442,4 +447,60 @@ void UUI_MainMenu::BindSettingsClosed()
 
 	SettingsWidget->OnSettingsMenuClosed.RemoveDynamic(this, &UUI_MainMenu::HandleSettingsClosed);
 	SettingsWidget->OnSettingsMenuClosed.AddDynamic(this, &UUI_MainMenu::HandleSettingsClosed);
+}
+
+void UUI_MainMenu::ShowLoginWidget()
+{
+	if (LoginWidget)
+	{
+		LoginWidget->SetStartLevelName(StartLevelName);
+		LoginWidget->SetVisibility(ESlateVisibility::Visible);
+
+		if (!LoginWidget->IsInViewport())
+		{
+			LoginWidget->AddToViewport(10);
+		}
+
+		SetMenuButtonsEnabled(false);
+		return;
+	}
+
+	if (!LoginWidgetClass)
+	{
+		OpenStartLevel();
+		return;
+	}
+
+	if (APlayerController* OwningPlayer = GetOwningPlayer())
+	{
+		LoginWidget = CreateWidget<UUI_Login>(OwningPlayer, LoginWidgetClass);
+	}
+	else if (UWorld* World = GetWorld())
+	{
+		LoginWidget = CreateWidget<UUI_Login>(World, LoginWidgetClass);
+	}
+
+	if (!LoginWidget)
+	{
+		OpenStartLevel();
+		return;
+	}
+
+	LoginWidget->SetStartLevelName(StartLevelName);
+	LoginWidget->AddToViewport(10);
+	SetMenuButtonsEnabled(false);
+}
+
+void UUI_MainMenu::OpenStartLevel() const
+{
+	if (!StartLevelName.IsNone())
+	{
+		UGameplayStatics::OpenLevel(this, StartLevelName);
+	}
+}
+
+bool UUI_MainMenu::IsDebugStartEnabled() const
+{
+	const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
+	return ResourceSettings && ResourceSettings->bDebugSkipLogin;
 }

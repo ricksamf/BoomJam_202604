@@ -583,6 +583,30 @@ bool AGsPlayer::IsDashing() const
 	return CurrentAction == EUEGameJamPlayerAction::Dash;
 }
 
+bool AGsPlayer::IsDashAvailable() const
+{
+	const UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
+	if (bIsDead || bIsFalculaLaunching || IsWallRunning() || !PlayerMovementComponent || IsCharacterActionActive())
+	{
+		return false;
+	}
+
+	const UWorld* World = GetWorld();
+	const float CurrentWorldTime = World ? World->GetTimeSeconds() : 0.0f;
+	if ((CurrentWorldTime - LastDashTime) < GetPlayerTuning().DashCooldown)
+	{
+		return false;
+	}
+
+	if (PlayerMovementComponent->IsFalling() && bHasDashedSinceLanded)
+	{
+		return false;
+	}
+
+	FVector ForwardDirection = FVector::VectorPlaneProject(GetActorForwardVector(), FVector::UpVector);
+	return ForwardDirection.Normalize();
+}
+
 bool AGsPlayer::IsLedgeClimbing() const
 {
 	return CurrentAction == EUEGameJamPlayerAction::LedgeClimb;

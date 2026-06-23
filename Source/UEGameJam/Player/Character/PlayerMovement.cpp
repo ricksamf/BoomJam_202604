@@ -51,6 +51,11 @@ void AGsPlayer::DoJumpStart()
 		return;
 	}
 
+	if (CanUseWallRunCoyoteJump() && TryWallRunJump())
+	{
+		return;
+	}
+
 	if (IsSliding())
 	{
 		if (!StopSlide(false))
@@ -156,12 +161,7 @@ bool AGsPlayer::StartSlide()
 bool AGsPlayer::StartDash()
 {
 	UCharacterMovementComponent* PlayerMovementComponent = GetCharacterMovement();
-	if (bIsDead || !PlayerMovementComponent)
-	{
-		return false;
-	}
-
-	if (IsCharacterActionActive())
+	if (!IsDashAvailable() || !PlayerMovementComponent)
 	{
 		return false;
 	}
@@ -169,16 +169,7 @@ bool AGsPlayer::StartDash()
 	UWorld* World = GetWorld();
 	const float CurrentWorldTime = World ? World->GetTimeSeconds() : 0.0f;
 	const FGsPlayerTuningRow& PlayerTuning = GetPlayerTuning();
-	if ((CurrentWorldTime - LastDashTime) < PlayerTuning.DashCooldown)
-	{
-		return false;
-	}
-
 	const bool bIsAirborne = PlayerMovementComponent->IsFalling();
-	if (bIsAirborne && bHasDashedSinceLanded)
-	{
-		return false;
-	}
 
 	FVector ForwardDirection = FVector::VectorPlaneProject(GetActorForwardVector(), FVector::UpVector);
 	if (!ForwardDirection.Normalize())

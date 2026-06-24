@@ -67,6 +67,12 @@ void UUI_Login::NativeConstruct()
 		ConfirmBtn->OnClicked.AddDynamic(this, &UUI_Login::HandleConfirmClicked);
 	}
 
+	if (BackBtn)
+	{
+		BackBtn->OnClicked.RemoveDynamic(this, &UUI_Login::HandleBackClicked);
+		BackBtn->OnClicked.AddDynamic(this, &UUI_Login::HandleBackClicked);
+	}
+
 	UpdateLoginState();
 }
 
@@ -129,6 +135,12 @@ void UUI_Login::HandleConfirmClicked()
 	{
 		UGameplayStatics::OpenLevel(this, StartLevelName);
 	}
+}
+
+void UUI_Login::HandleBackClicked()
+{
+	RemoveFromParent();
+	OnLoginClosed.Broadcast();
 }
 
 void UUI_Login::LoadWordLists()

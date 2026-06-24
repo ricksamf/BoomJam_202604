@@ -110,6 +110,9 @@ private:
 	void HandleSettingsClosed();
 
 	UFUNCTION()
+	void HandleLoginClosed();
+
+	UFUNCTION()
 	void HandleAttractMediaOpened(FString OpenedUrl);
 
 	UFUNCTION()
@@ -128,6 +131,7 @@ private:
 	UMediaPlayer* GetAttractMediaPlayer();
 	void PrepareAttractVideoImage();
 	void BindSettingsClosed();
+	void BindLoginClosed();
 	void ShowLoginWidget();
 	void OpenStartLevel() const;
 	bool IsDebugStartEnabled() const;

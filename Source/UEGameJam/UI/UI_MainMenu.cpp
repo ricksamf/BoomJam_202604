@@ -178,6 +178,17 @@ void UUI_MainMenu::HandleSettingsClosed()
 	StartIdleTimer();
 }
 
+void UUI_MainMenu::HandleLoginClosed()
+{
+	if (!IsInViewport() || bIsAttractModeActive)
+	{
+		return;
+	}
+
+	SetMenuButtonsEnabled(true);
+	StartIdleTimer();
+}
+
 void UUI_MainMenu::HandleAttractMediaOpened(FString OpenedUrl)
 {
 	static_cast<void>(OpenedUrl);
@@ -449,11 +460,23 @@ void UUI_MainMenu::BindSettingsClosed()
 	SettingsWidget->OnSettingsMenuClosed.AddDynamic(this, &UUI_MainMenu::HandleSettingsClosed);
 }
 
+void UUI_MainMenu::BindLoginClosed()
+{
+	if (!LoginWidget)
+	{
+		return;
+	}
+
+	LoginWidget->OnLoginClosed.RemoveDynamic(this, &UUI_MainMenu::HandleLoginClosed);
+	LoginWidget->OnLoginClosed.AddDynamic(this, &UUI_MainMenu::HandleLoginClosed);
+}
+
 void UUI_MainMenu::ShowLoginWidget()
 {
 	if (LoginWidget)
 	{
 		LoginWidget->SetStartLevelName(StartLevelName);
+		BindLoginClosed();
 		LoginWidget->SetVisibility(ESlateVisibility::Visible);
 
 		if (!LoginWidget->IsInViewport())
@@ -487,6 +510,7 @@ void UUI_MainMenu::ShowLoginWidget()
 	}
 
 	LoginWidget->SetStartLevelName(StartLevelName);
+	BindLoginClosed();
 	LoginWidget->AddToViewport(10);
 	SetMenuButtonsEnabled(false);
 }

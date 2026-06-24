@@ -10,6 +10,8 @@ class UButton;
 class UEditableTextBox;
 class UTextBlock;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLoginClosed);
+
 /**
  * 登录界面
  */
@@ -19,6 +21,10 @@ class UEGAMEJAM_API UUI_Login : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	/** 登录界面点击返回并关闭时触发 */
+	UPROPERTY(BlueprintAssignable, Category="Login")
+	FOnLoginClosed OnLoginClosed;
+
 	void SetStartLevelName(FName InStartLevelName);
 
 protected:
@@ -35,6 +41,10 @@ protected:
 	/** 确认登录按钮，名字可用时才可点击 */
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UButton> ConfirmBtn;
+
+	/** 返回主界面按钮 */
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UButton> BackBtn;
 
 	/** 名字可用性提示文字 */
 	UPROPERTY(meta=(BindWidget))
@@ -53,6 +63,9 @@ private:
 
 	UFUNCTION()
 	void HandleConfirmClicked();
+
+	UFUNCTION()
+	void HandleBackClicked();
 
 	void LoadWordLists();
 	void UpdateLoginState();

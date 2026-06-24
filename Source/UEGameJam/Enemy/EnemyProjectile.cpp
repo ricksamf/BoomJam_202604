@@ -185,6 +185,41 @@ void AEnemyProjectile::OnBeginOverlap(UPrimitiveComponent* /*OverlappedComp*/, A
 		return;
 	}
 
+	// 硬性世界归属门禁：逐帧线段拦截（上面的 TryHandleRealmBoundaryBlock）只能拦下
+	// "本帧恰好跨越边界"的那一次。但如果子弹已经飞到球外（Previous 与 Current 都在
+	// 球外，或玩家与子弹都在球外贴着边界），逐帧拦截会判定两端同侧而放行，于是这颗
+	// "已穿出"的子弹仍能命中玩家，表现为"穿出球体的子弹依旧击杀主角"。
+	//
+	// 这里补一道与"何时跨界"无关的绝对门禁，直接按子弹的世界归属判断它当前是否处在
+	// 自己的有效区域：
+	//   - 里世界子弹(Realm)  ：只在球内有效；一旦子弹当前位置已在球外 → 失效销毁。
+	//   - 表世界子弹(Surface)：只在球外有效；一旦子弹当前位置已在球内 → 失效销毁。
+	// 该规则与玩家位置无关，能覆盖"子弹与玩家都在球外"等所有跨界穿出情形。
+	{
+		FVector Center;
+		float Radius;
+		if (GetActiveBallBoundary(Center, Radius))
+		{
+			const bool bProjInside = FVector::DistSquared(GetActorLocation(), Center) <= FMath::Square(Radius);
+			const ERealmType ProjRealm = RealmTag ? RealmTag->GetRealmType() : ERealmType::Realm;
+			const bool bProjValidHere = (ProjRealm == ERealmType::Realm) ? bProjInside : !bProjInside;
+			if (!bProjValidHere)
+			{
+				// 销毁点钳到球面，视觉上停在边界。
+				FVector ImpactPoint = GetActorLocation();
+				FVector ImpactNormal = FVector::UpVector;
+				const FVector Dir = (GetActorLocation() - Center).GetSafeNormal();
+				if (!Dir.IsNearlyZero())
+				{
+					ImpactPoint = Center + Dir * Radius;
+					ImpactNormal = Dir;
+				}
+				HandleImpactAndDestroy(ImpactPoint, ImpactNormal);
+				return;
+			}
+		}
+	}
+
 	AController* InstigatorCtrl = GetInstigatorController();
 	UGameplayStatics::ApplyDamage(OtherActor, Damage, InstigatorCtrl, this, DamageTypeClass);
 
@@ -295,6 +330,29 @@ bool AEnemyProjectile::FindSphereBoundaryIntersection(const FVector& Start, cons
 
 void AEnemyProjectile::HandleImpactAndDestroy(const FVector& ImpactPoint, const FVector& ImpactNormal)
 {
+	// 根因修复：跨界检测算出的 ImpactPoint 是子弹与球面的精确交点，但子弹 Mesh
+	// 本帧已被 ProjectileMovement 移动到了球面外侧的 End 位置。若直接 Destroy()，
+	// 子弹（及其拖尾 TrailFX）就停留在球外消失，肉眼看到"穿出球体一点距离才销毁"。
+	// 因此销毁前必须：①停止移动 ②把子弹强行拉回到边界交点 ③关闭拖尾，
+	// 让消失点精确落在球面上。
+	if (ProjectileMovement)
+	{
+		ProjectileMovement->StopMovementImmediately();
+		ProjectileMovement->SetComponentTickEnabled(false);
+	}
+
+	// 关闭拖尾，避免 Niagara 残留显示已经飞出球外的那段轨迹。
+	if (TrailFX)
+	{
+		TrailFX->Deactivate();
+	}
+
+	// 关掉碰撞，避免回退过程中 sweep 触发额外的 Overlap/Hit。
+	SetActorEnableCollision(false);
+
+	// 把子弹拉回边界交点（不做 sweep，直接 Teleport）。
+	SetActorLocation(ImpactPoint, false, nullptr, ETeleportType::TeleportPhysics);
+
 	if (ImpactFX)
 	{
 		const FVector SafeNormal = ImpactNormal.IsNearlyZero() ? FVector::UpVector : ImpactNormal;

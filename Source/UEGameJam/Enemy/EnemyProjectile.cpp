@@ -47,6 +47,14 @@ AEnemyProjectile::AEnemyProjectile()
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = false;
 
+	// 关键：让 Actor 的 Tick 依赖 ProjectileMovement 的 Tick，强制"先移动后检测"。
+	// 默认情况下 UMovementComponent 在 Owner Actor Tick 之后才执行，导致本类
+	// Tick 里 GetActorLocation() 读到的是本帧移动前的旧位置，跨界检测因此滞后
+	// 一帧。高速子弹一帧可飞数十厘米，等到下一帧才检测到跨界，子弹已渲染到球外，
+	// 表现为"穿出球体一点距离才销毁"。建立此 prerequisite 后，检测线段始终对应
+	// 子弹本帧真实移动段，杜绝滞后穿透。
+	PrimaryActorTick.AddPrerequisite(ProjectileMovement, ProjectileMovement->PrimaryComponentTick);
+
 	RealmTag = CreateDefaultSubobject<URealmTagComponent>(TEXT("RealmTag"));
 	// 关键：禁掉 RealmTag 的 Tick，避免子弹靠近玩家（进入揭示圈）时被
 	// SetActorEnableCollision(false) 关闭碰撞。子弹整个生命周期保持碰撞 ON，
@@ -110,6 +118,24 @@ void AEnemyProjectile::InitializeAndLaunch(const FVector& Direction, float Speed
 	if (LifeTime > 0.f)
 	{
 		SetLifeSpan(LifeTime);
+	}
+
+	// 修复发射首帧盲区：子弹从枪口（Muzzle，带偏移）出生，敌人贴着球边缘向外射时，
+	// 枪口可能已经在球面之外。此时若直接用枪口当作首个 PreviousLocation，后续每帧
+	// Start/End 都在球外，跨界检测永不触发，子弹会完全穿出。
+	// 处理：把"发射者身体位置"作为首段检测起点，立刻做一次「发射者 → 枪口」的跨界
+	// 判定——若这一段已跨越球面，直接在边界处销毁；否则把 PreviousLocation 校正为
+	// 发射者位置，保证首帧 Tick 的检测线段能覆盖枪口越界的情况。
+	if (InInstigator)
+	{
+		const FVector InstigatorLoc = InInstigator->GetActorLocation();
+		const FVector MuzzleLoc = GetActorLocation();
+		if (TryHandleRealmBoundaryBlock(InstigatorLoc, MuzzleLoc))
+		{
+			return;
+		}
+		PreviousLocation = InstigatorLoc;
+		bHasPreviousLocation = true;
 	}
 }
 

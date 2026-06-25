@@ -11,6 +11,7 @@ class UImage;
 class AGsPlayer;
 class UGsPauseMenuUI;
 class UGsRespawnHintUI;
+class UTextBlock;
 class UWidget;
 
 /**
@@ -48,6 +49,10 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage> DashImg;
 
+	/** 倒计时文字，需要在 Widget 蓝图中命名为 CountdownText */
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> CountdownText;
+
 	/** 暂停界面*/
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UGsPauseMenuUI> PauseWidget;
@@ -78,5 +83,6 @@ private:
 	void SetDeathWidgetVisible(bool bVisible);
 	void UpdateSkillCooldown();
 	void UpdateDashImage();
+	void UpdateCountdownText();
 	void ShowRespawnHint(const FText& HintText);
 };

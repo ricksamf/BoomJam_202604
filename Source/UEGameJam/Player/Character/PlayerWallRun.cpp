@@ -145,16 +145,6 @@ void AGsPlayer::UpdateWallRunDetection()
 	{
 		return;
 	}
-
-	const bool bIsRightWall = FVector::DotProduct(GetActorRightVector(), -WallNormal) >= 0.0f;
-	const FString DebugMessage = FString::Printf(TEXT("Wall Run Triggered: %s"), bIsRightWall ? TEXT("Right") : TEXT("Left"));
-
-	UE_LOG(LogUEGameJam, Log, TEXT("%s"), *DebugMessage);
-
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Green, DebugMessage);
-	}
 }
 
 bool AGsPlayer::TryFindWallRunSurface(FHitResult& OutWallHit, FVector& OutWallNormal) const

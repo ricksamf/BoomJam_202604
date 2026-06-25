@@ -115,11 +115,7 @@ void AGsPlayer::DoFalcula()
 	{
 		FinishGrapple();
 	}
-
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Cyan, TEXT("FalculaAction: Grapple point reachable"));
-	}
+	
 }
 
 void AGsPlayer::UpdateGrapple(float DeltaSeconds)

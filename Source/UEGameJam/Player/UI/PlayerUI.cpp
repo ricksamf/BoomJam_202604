@@ -4,9 +4,11 @@
 
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
+#include "Components/TextBlock.h"
 #include "Components/Widget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/Character/GsPlayer.h"
+#include "Player/Game/GsRankRunSubsystem.h"
 #include "Player/UI/GsPauseMenuUI.h"
 #include "Player/UI/GsRespawnHintUI.h"
 
@@ -23,6 +25,7 @@ void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 	SetDeathWidgetVisible(false);
 	UpdateSkillCooldown();
 	UpdateDashImage();
+	UpdateCountdownText();
 
 	if (!BoundPlayer)
 	{
@@ -38,6 +41,7 @@ void UPlayerUI::BindPlayer(AGsPlayer* InPlayer)
 	}
 	UpdateSkillCooldown();
 	UpdateDashImage();
+	UpdateCountdownText();
 }
 
 void UPlayerUI::ShowPauseMenu()
@@ -78,6 +82,7 @@ void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 	UpdateSkillCooldown();
 	UpdateDashImage();
+	UpdateCountdownText();
 }
 
 void UPlayerUI::NativeDestruct()
@@ -142,6 +147,26 @@ void UPlayerUI::UpdateDashImage()
 	{
 		DashImg->SetVisibility(BoundPlayer && BoundPlayer->IsDashAvailable() ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
+}
+
+void UPlayerUI::UpdateCountdownText()
+{
+	if (!CountdownText)
+	{
+		return;
+	}
+
+	const UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this);
+	if (!RankRunSubsystem || !RankRunSubsystem->HasActiveRun())
+	{
+		CountdownText->SetText(FText::FromString(TEXT("--:--")));
+		return;
+	}
+
+	const int32 RemainingSeconds = FMath::Max(0, FMath::CeilToInt(RankRunSubsystem->GetRemainingTimeSeconds()));
+	const int32 Minutes = RemainingSeconds / 60;
+	const int32 Seconds = RemainingSeconds % 60;
+	CountdownText->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds)));
 }
 
 void UPlayerUI::ShowRespawnHint(const FText& HintText)

@@ -6,6 +6,7 @@
 
 #include "EnemyStateTreeTasks.h"
 #include "MeleeEnemy.h"
+#include "Settings/GsProjectResourceSettings.h"
 #include "StateTreeExecutionContext.h"
 #include "Engine/Engine.h"
 
@@ -13,7 +14,8 @@ namespace
 {
 	static void PrintEnemyTaskDebug(const FString& Msg, const FColor Color)
 	{
-		if (GEngine)
+		const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
+		if (GEngine && ResourceSettings && ResourceSettings->bShowEnemy)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 1.5f, Color, Msg);
 		}

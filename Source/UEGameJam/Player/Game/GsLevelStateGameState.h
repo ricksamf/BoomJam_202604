@@ -41,6 +41,7 @@ protected:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
 public:
 	/** 激活指定编号的复活点，仅允许推进到更靠后的编号 */

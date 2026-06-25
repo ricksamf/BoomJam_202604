@@ -7,6 +7,7 @@
 #include "EnemyStateTreeTasks.h"
 #include "EnemyCharacter.h"
 #include "EnemyAIController.h"
+#include "Settings/GsProjectResourceSettings.h"
 #include "StateTreeExecutionContext.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "NavigationSystem.h"
@@ -21,7 +22,8 @@ namespace
 {
 	static void PrintEnemyCommonDebug(const FString& Msg, const FColor Color)
 	{
-		if (GEngine)
+		const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
+		if (GEngine && ResourceSettings && ResourceSettings->bShowEnemy)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 1.5f, Color, Msg);
 		}

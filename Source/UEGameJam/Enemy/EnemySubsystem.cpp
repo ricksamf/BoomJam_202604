@@ -5,6 +5,7 @@
 #include "EnemySubsystem.h"
 #include "EnemyCharacter.h"
 #include "EnemyHealthComponent.h"
+#include "Settings/GsProjectResourceSettings.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 
@@ -162,7 +163,8 @@ void UEnemySubsystem::EnemyDump() const
 	const int32 Surface = GetAliveCountByRealm(ERealmType::Surface);
 	const int32 Realm   = GetAliveCountByRealm(ERealmType::Realm);
 	UE_LOG(LogTemp, Log, TEXT("[EnemySubsystem] Alive=%d Surface=%d Realm=%d"), Alive, Surface, Realm);
-	if (GEngine)
+	const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
+	if (GEngine && ResourceSettings && ResourceSettings->bShowEnemy)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow,
 			FString::Printf(TEXT("Alive=%d Surface=%d Realm=%d"), Alive, Surface, Realm));

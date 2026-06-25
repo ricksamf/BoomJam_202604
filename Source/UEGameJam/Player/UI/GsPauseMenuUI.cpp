@@ -5,6 +5,7 @@
 #include "Components/Button.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Player/Game/GsRankRunSubsystem.h"
 
 static const FName MainMenuLevelName = TEXT("LEVEL_MainMenu");
 
@@ -103,6 +104,11 @@ void UGsPauseMenuUI::HandleResumeClicked()
 
 void UGsPauseMenuUI::HandleReturnMainMenuClicked()
 {
+	if (UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this))
+	{
+		RankRunSubsystem->SettleRun(this, EGsRankSettleReason::Interrupted);
+	}
+
 	HidePauseMenu();
 	UGameplayStatics::OpenLevel(this, MainMenuLevelName);
 }

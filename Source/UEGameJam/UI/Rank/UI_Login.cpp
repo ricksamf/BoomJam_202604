@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
 #include "Player/Game/GsRankSaveGame.h"
+#include "Player/Game/GsRankRunSubsystem.h"
 #include "Settings/GsProjectResourceSettings.h"
 #include "UI/Rank/GsLoginWordRow.h"
 
@@ -115,17 +116,12 @@ void UUI_Login::HandleConfirmClicked()
 		return;
 	}
 
-	UGsRankSaveGame* RankSaveGame = UGsRankSaveGame::LoadOrCreate();
-	if (!RankSaveGame || !RankSaveGame->RegisterPlayerName(PlayerName) || !UGsRankSaveGame::Save(RankSaveGame))
+	UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this);
+	if (!RankRunSubsystem || !RankRunSubsystem->StartRun(PlayerName))
 	{
 		if (HintText)
 		{
-			HintText->SetText(FText::FromString(TEXT("保存名字失败")));
-		}
-
-		if (ConfirmBtn)
-		{
-			ConfirmBtn->SetIsEnabled(false);
+			HintText->SetText(FText::FromString(TEXT("开始记录失败")));
 		}
 
 		return;

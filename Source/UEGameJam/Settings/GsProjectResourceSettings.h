@@ -38,6 +38,14 @@ public:
 	TSoftObjectPtr<UDataTable> LoginWordTable;
 
 	/** 调试模式下跳过登录界面，主菜单点击开始游戏后直接进入关卡 */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Login")
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Debug")
 	bool bDebugSkipLogin = false;
+
+	/** 排行榜关卡全局限时时长，单位秒 */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Rank", meta=(ClampMin=1.0, Units="s"))
+	float RankTimeLimitSeconds = 180.0f;
+	
+	/** 是否显示敌人相关的屏幕调试信息 */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Debug")
+	bool bShowEnemy = true;
 };

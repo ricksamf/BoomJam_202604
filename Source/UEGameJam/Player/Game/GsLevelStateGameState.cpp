@@ -2,13 +2,17 @@
 
 #include "Player/Game/GsLevelStateGameState.h"
 
+#include "Engine/Engine.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Player/Game/GsRankRunSubsystem.h"
 #include "Player/Scene/GsRespawnPoint.h"
 #include "UEGameJam.h"
 
 AGsLevelStateGameState::AGsLevelStateGameState()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bTickEvenWhenPaused = true;
 }
 
 void AGsLevelStateGameState::BeginPlay()
@@ -17,6 +21,38 @@ void AGsLevelStateGameState::BeginPlay()
 
 	CacheRespawnPoints();
 	ActivateInitialCheckpoint();
+}
+
+void AGsLevelStateGameState::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this);
+	if (!RankRunSubsystem || !RankRunSubsystem->HasActiveRun() || RankRunSubsystem->HasSettledRun())
+	{
+		return;
+	}
+
+	if (RankRunSubsystem->GetRemainingTimeSeconds() > 0.0f)
+	{
+		return;
+	}
+
+	UE_LOG(LogUEGameJam, Log, TEXT("[Rank] Time out triggered."));
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("[Rank] TimeOut"));
+	}
+
+	RankRunSubsystem->SettleRun(this, EGsRankSettleReason::TimeOut);
+
+	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		PlayerController->SetIgnoreMoveInput(true);
+		PlayerController->SetIgnoreLookInput(true);
+	}
+
+	UGameplayStatics::SetGamePaused(this, true);
 }
 
 bool AGsLevelStateGameState::ActivateCheckpointByIndex(int32 CheckpointIndex)
@@ -38,6 +74,10 @@ bool AGsLevelStateGameState::ActivateCheckpointByIndex(int32 CheckpointIndex)
 	CurrentRespawnTransform = RespawnPoint->GetActorTransform();
 	CurrentRespawnPoint = RespawnPoint;
 	bHasRespawnTransform = true;
+	if (UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this))
+	{
+		RankRunSubsystem->CommitCurrentSegmentKills(CurrentCheckpointIndex);
+	}
 	return true;
 }
 
@@ -68,6 +108,11 @@ void AGsLevelStateGameState::EnsureFallbackRespawnTransform(const FTransform& Fa
 bool AGsLevelStateGameState::RegisterDeathAtCurrentRespawnPoint(FText& OutHintText)
 {
 	OutHintText = FText::GetEmpty();
+
+	if (UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this))
+	{
+		RankRunSubsystem->ResetCurrentSegmentKills(CurrentCheckpointIndex);
+	}
 
 	if (!IsValid(CurrentRespawnPoint))
 	{

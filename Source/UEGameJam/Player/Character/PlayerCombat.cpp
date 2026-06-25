@@ -14,6 +14,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/Character/GsPlayerResourceDataAsset.h"
+#include "Player/Game/GsRankRunSubsystem.h"
 #include "Player/Scene/GsSkillAimAssistPoint.h"
 #include "Player/Skill/GsSkillBigBall.h"
 #include "Player/Skill/GsSkillBall.h"
@@ -295,15 +296,20 @@ void AGsPlayer::PerformMeleeHit()
 		}
 
 		DamagedActors.Add(HitActor);
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow,
-			FString::Printf(TEXT("击中=======%s"), *HitActor->GetName()));
-		}
-		const float AppliedDamage = UGameplayStatics::ApplyDamage(HitActor, MeleeDamage, GetController(), this, UDamageType::StaticClass());
+
 		AEnemyCharacter* HitEnemy = Cast<AEnemyCharacter>(HitActor);
+		const bool bWasAliveEnemy = HitEnemy && !HitEnemy->IsDead();
+		const float AppliedDamage = UGameplayStatics::ApplyDamage(HitActor, MeleeDamage, GetController(), this, UDamageType::StaticClass());
 		if (AppliedDamage > 0.0f && HitEnemy)
 		{
+			if (bWasAliveEnemy && HitEnemy->IsDead())
+			{
+				if (UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this))
+				{
+					RankRunSubsystem->RegisterPlayerKill(HitEnemy);
+				}
+			}
+
 			if (!bTriggeredMeleeHitStop)
 			{
 				StartMeleeHitStop();

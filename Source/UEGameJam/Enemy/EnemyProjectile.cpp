@@ -47,6 +47,14 @@ AEnemyProjectile::AEnemyProjectile()
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = false;
 
+	// 关键：让 Actor 的 Tick 依赖 ProjectileMovement 的 Tick，强制"先移动后检测"。
+	// 默认情况下 UMovementComponent 在 Owner Actor Tick 之后才执行，导致本类
+	// Tick 里 GetActorLocation() 读到的是本帧移动前的旧位置，跨界检测因此滞后
+	// 一帧。高速子弹一帧可飞数十厘米，等到下一帧才检测到跨界，子弹已渲染到球外，
+	// 表现为"穿出球体一点距离才销毁"。建立此 prerequisite 后，检测线段始终对应
+	// 子弹本帧真实移动段，杜绝滞后穿透。
+	PrimaryActorTick.AddPrerequisite(ProjectileMovement, ProjectileMovement->PrimaryComponentTick);
+
 	RealmTag = CreateDefaultSubobject<URealmTagComponent>(TEXT("RealmTag"));
 	// 关键：禁掉 RealmTag 的 Tick，避免子弹靠近玩家（进入揭示圈）时被
 	// SetActorEnableCollision(false) 关闭碰撞。子弹整个生命周期保持碰撞 ON，
@@ -111,6 +119,24 @@ void AEnemyProjectile::InitializeAndLaunch(const FVector& Direction, float Speed
 	{
 		SetLifeSpan(LifeTime);
 	}
+
+	// 修复发射首帧盲区：子弹从枪口（Muzzle，带偏移）出生，敌人贴着球边缘向外射时，
+	// 枪口可能已经在球面之外。此时若直接用枪口当作首个 PreviousLocation，后续每帧
+	// Start/End 都在球外，跨界检测永不触发，子弹会完全穿出。
+	// 处理：把"发射者身体位置"作为首段检测起点，立刻做一次「发射者 → 枪口」的跨界
+	// 判定——若这一段已跨越球面，直接在边界处销毁；否则把 PreviousLocation 校正为
+	// 发射者位置，保证首帧 Tick 的检测线段能覆盖枪口越界的情况。
+	if (InInstigator)
+	{
+		const FVector InstigatorLoc = InInstigator->GetActorLocation();
+		const FVector MuzzleLoc = GetActorLocation();
+		if (TryHandleRealmBoundaryBlock(InstigatorLoc, MuzzleLoc))
+		{
+			return;
+		}
+		PreviousLocation = InstigatorLoc;
+		bHasPreviousLocation = true;
+	}
 }
 
 void AEnemyProjectile::OnHit(UPrimitiveComponent* /*HitComp*/, AActor* OtherActor,
@@ -157,6 +183,41 @@ void AEnemyProjectile::OnBeginOverlap(UPrimitiveComponent* /*OverlappedComp*/, A
 	{
 		// 撞到其他敌人 / 杂物 → 穿透。
 		return;
+	}
+
+	// 硬性世界归属门禁：逐帧线段拦截（上面的 TryHandleRealmBoundaryBlock）只能拦下
+	// "本帧恰好跨越边界"的那一次。但如果子弹已经飞到球外（Previous 与 Current 都在
+	// 球外，或玩家与子弹都在球外贴着边界），逐帧拦截会判定两端同侧而放行，于是这颗
+	// "已穿出"的子弹仍能命中玩家，表现为"穿出球体的子弹依旧击杀主角"。
+	//
+	// 这里补一道与"何时跨界"无关的绝对门禁，直接按子弹的世界归属判断它当前是否处在
+	// 自己的有效区域：
+	//   - 里世界子弹(Realm)  ：只在球内有效；一旦子弹当前位置已在球外 → 失效销毁。
+	//   - 表世界子弹(Surface)：只在球外有效；一旦子弹当前位置已在球内 → 失效销毁。
+	// 该规则与玩家位置无关，能覆盖"子弹与玩家都在球外"等所有跨界穿出情形。
+	{
+		FVector Center;
+		float Radius;
+		if (GetActiveBallBoundary(Center, Radius))
+		{
+			const bool bProjInside = FVector::DistSquared(GetActorLocation(), Center) <= FMath::Square(Radius);
+			const ERealmType ProjRealm = RealmTag ? RealmTag->GetRealmType() : ERealmType::Realm;
+			const bool bProjValidHere = (ProjRealm == ERealmType::Realm) ? bProjInside : !bProjInside;
+			if (!bProjValidHere)
+			{
+				// 销毁点钳到球面，视觉上停在边界。
+				FVector ImpactPoint = GetActorLocation();
+				FVector ImpactNormal = FVector::UpVector;
+				const FVector Dir = (GetActorLocation() - Center).GetSafeNormal();
+				if (!Dir.IsNearlyZero())
+				{
+					ImpactPoint = Center + Dir * Radius;
+					ImpactNormal = Dir;
+				}
+				HandleImpactAndDestroy(ImpactPoint, ImpactNormal);
+				return;
+			}
+		}
 	}
 
 	AController* InstigatorCtrl = GetInstigatorController();
@@ -269,6 +330,29 @@ bool AEnemyProjectile::FindSphereBoundaryIntersection(const FVector& Start, cons
 
 void AEnemyProjectile::HandleImpactAndDestroy(const FVector& ImpactPoint, const FVector& ImpactNormal)
 {
+	// 根因修复：跨界检测算出的 ImpactPoint 是子弹与球面的精确交点，但子弹 Mesh
+	// 本帧已被 ProjectileMovement 移动到了球面外侧的 End 位置。若直接 Destroy()，
+	// 子弹（及其拖尾 TrailFX）就停留在球外消失，肉眼看到"穿出球体一点距离才销毁"。
+	// 因此销毁前必须：①停止移动 ②把子弹强行拉回到边界交点 ③关闭拖尾，
+	// 让消失点精确落在球面上。
+	if (ProjectileMovement)
+	{
+		ProjectileMovement->StopMovementImmediately();
+		ProjectileMovement->SetComponentTickEnabled(false);
+	}
+
+	// 关闭拖尾，避免 Niagara 残留显示已经飞出球外的那段轨迹。
+	if (TrailFX)
+	{
+		TrailFX->Deactivate();
+	}
+
+	// 关掉碰撞，避免回退过程中 sweep 触发额外的 Overlap/Hit。
+	SetActorEnableCollision(false);
+
+	// 把子弹拉回边界交点（不做 sweep，直接 Teleport）。
+	SetActorLocation(ImpactPoint, false, nullptr, ETeleportType::TeleportPhysics);
+
 	if (ImpactFX)
 	{
 		const FVector SafeNormal = ImpactNormal.IsNearlyZero() ? FVector::UpVector : ImpactNormal;

@@ -4,9 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Types/SlateEnums.h"
 #include "UI_SettingsMenu.generated.h"
 
 class UButton;
+class UEditableTextBox;
+class UUI_Rank;
 class UUI_SettingsWidget;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSettingsMenuClosed);
@@ -49,9 +52,17 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UUI_SettingsWidget> SoundSetting;
 
+	/** 排行榜限时时长输入框，单位秒，修改后保存到本地存档 */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UEditableTextBox> RankTimeLimitInputBox;
+
 	/** 返回主菜单按钮 */
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UButton> BackBtn;
+
+	/** 排行榜按钮 */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UButton> RankBtn;
 
 	/** 第一关按钮 */
 	UPROPERTY(meta=(BindWidget))
@@ -85,7 +96,13 @@ private:
 	void HandleSoundChanged(int32 NewIndex, const FText& NewText);
 
 	UFUNCTION()
+	void HandleRankTimeLimitCommitted(const FText& NewText, ETextCommit::Type CommitMethod);
+
+	UFUNCTION()
 	void HandleBackClicked();
+
+	UFUNCTION()
+	void HandleRankClicked();
 
 	UFUNCTION()
 	void HandleLevel1Clicked();
@@ -108,7 +125,12 @@ private:
 	void ApplyFrameRateByIndex(int32 NewIndex) const;
 	float GetBGMVolume() const;
 	float GetSFXVolume() const;
+	float GetEffectiveRankTimeLimitSeconds() const;
+	void RefreshRankTimeLimitInputText() const;
 
 	UPROPERTY(Transient)
 	TArray<FIntPoint> ResolutionOptions;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UUI_Rank> RankWidget;
 };

@@ -27,6 +27,9 @@ public:
 	void OpenSettlementRank();
 
 	UFUNCTION(BlueprintCallable, Category="Rank")
+	void OpenFullRank();
+
+	UFUNCTION(BlueprintCallable, Category="Rank")
 	void RefreshRank();
 
 	UFUNCTION(BlueprintCallable, Category="Rank")
@@ -44,6 +47,10 @@ protected:
 	/** 回到主界面按钮，结算入口打开排行榜时显示，需要在 Widget 蓝图中命名为 BackMainMenuButton */
 	UPROPERTY(meta=(BindWidgetOptional))
 	TObjectPtr<UButton> BackMainMenuButton;
+
+	/** 关闭排行榜按钮，设置界面打开全量排行榜时显示，需要在 Widget 蓝图中命名为 CloseButton */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UButton> CloseButton;
 
 	/** 排行榜玩家条目的 Widget 蓝图类 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Rank")
@@ -78,6 +85,13 @@ protected:
 	float CurrentPlayerFlashMinOpacity = 0.35f;
 
 private:
+	enum class ERankOpenMode : uint8
+	{
+		Normal,
+		Settlement,
+		Full
+	};
+
 	struct FRankAnimatedItem
 	{
 		TWeakObjectPtr<UUI_RankPlayerItem> Item;
@@ -85,10 +99,15 @@ private:
 		bool bIsCurrentPlayer = false;
 	};
 
+	void RefreshRankByMode();
+	void PopulateRankList(bool bDisplayAllRecords, bool bMarkCurrentPlayer, bool bPlayAnimation);
+	UUI_RankPlayerItem* CreateRankPlayerItem() const;
+	void AddHeaderItem();
 	void PlayOpeningAnimation();
 	void AddAnimatedItem(UUI_RankPlayerItem* Item, float StartTime, bool bIsCurrentPlayer);
 	void FinishOpeningAnimation();
 	void SetBackMainMenuButtonVisible(bool bVisible);
+	void SetCloseButtonVisible(bool bVisible);
 	void BuildDisplayRecordIndices(const TArray<FGsRankPlayerRecord>& Records, int32 CurrentPlayerIndex, TArray<int32>& OutIndices) const;
 	int32 FindCurrentPlayerIndex(const TArray<FGsRankPlayerRecord>& Records, const FString& PlayerName) const;
 	FString GetActiveCurrentPlayerName() const;
@@ -96,11 +115,15 @@ private:
 	UFUNCTION()
 	void HandleBackMainMenuClicked();
 
+	UFUNCTION()
+	void HandleCloseClicked();
+
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UUI_RankPlayerItem>> RankItems;
 
 	TArray<FRankAnimatedItem> AnimatedItems;
 	FString ManualCurrentPlayerName;
 	float AnimationElapsedTime = 0.0f;
+	ERankOpenMode CurrentOpenMode = ERankOpenMode::Normal;
 	bool bIsOpeningAnimationPlaying = false;
 };

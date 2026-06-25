@@ -43,6 +43,23 @@ bool UGsPlayerSaveGame::SaveVolumes(float NewBGMVolume, float NewSFXVolume)
 	return Save(SaveGame);
 }
 
+bool UGsPlayerSaveGame::SaveRankTimeLimitSeconds(float NewRankTimeLimitSeconds)
+{
+	if (!FMath::IsFinite(NewRankTimeLimitSeconds) || NewRankTimeLimitSeconds <= 0.f)
+	{
+		return false;
+	}
+
+	UGsPlayerSaveGame* SaveGame = LoadOrCreate();
+	if (!SaveGame)
+	{
+		return false;
+	}
+
+	SaveGame->SetRankTimeLimitSeconds(NewRankTimeLimitSeconds);
+	return Save(SaveGame);
+}
+
 void UGsPlayerSaveGame::SetBGMVolume(float NewVolume)
 {
 	BGMVolume = FMath::Clamp(NewVolume, 0.f, 1.f);
@@ -51,4 +68,12 @@ void UGsPlayerSaveGame::SetBGMVolume(float NewVolume)
 void UGsPlayerSaveGame::SetSFXVolume(float NewVolume)
 {
 	SFXVolume = FMath::Clamp(NewVolume, 0.f, 1.f);
+}
+
+void UGsPlayerSaveGame::SetRankTimeLimitSeconds(float NewRankTimeLimitSeconds)
+{
+	if (FMath::IsFinite(NewRankTimeLimitSeconds) && NewRankTimeLimitSeconds > 0.f)
+	{
+		RankTimeLimitSeconds = NewRankTimeLimitSeconds;
+	}
 }

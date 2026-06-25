@@ -31,10 +31,46 @@ void UUI_RankPlayerItem::SetupRankItem(int32 Rank, const FGsRankPlayerRecord& Re
 	if (ReasonText)
 	{
 		ReasonText->SetText(GetSettleReasonText(Record.SettleReason));
+		ReasonText->SetColorAndOpacity(GetSettleReasonColor(Record.SettleReason));
 	}
 
 	const float TargetScale = bIsCurrentPlayerItem ? CurrentPlayerScale : NormalPlayerScale;
 	SetRenderScale(FVector2D(TargetScale, TargetScale));
+}
+
+void UUI_RankPlayerItem::SetupHeaderItem()
+{
+	bIsCurrentPlayerItem = false;
+
+	if (RankText)
+	{
+		RankText->SetText(FText::FromString(TEXT("排行")));
+	}
+
+	if (NameText)
+	{
+		NameText->SetText(FText::FromString(TEXT("名字")));
+	}
+
+	if (TimeText)
+	{
+		TimeText->SetText(FText::FromString(TEXT("用时")));
+	}
+
+	if (KillText)
+	{
+		KillText->SetText(FText::FromString(TEXT("杀敌")));
+	}
+
+	if (ReasonText)
+	{
+		ReasonText->SetText(FText::FromString(TEXT("结算")));
+		ReasonText->SetColorAndOpacity(FSlateColor(UnknownReasonColor));
+	}
+
+	SetRenderScale(FVector2D(NormalPlayerScale, NormalPlayerScale));
+	SetRenderOpacity(1.0f);
+	SetRenderTranslation(FVector2D::ZeroVector);
 }
 
 FText UUI_RankPlayerItem::FormatElapsedTime(int32 ElapsedMilliseconds)
@@ -57,8 +93,23 @@ FText UUI_RankPlayerItem::GetSettleReasonText(EGsRankSettleReason Reason)
 	case EGsRankSettleReason::TimeOut:
 		return FText::FromString(TEXT("超时"));
 	case EGsRankSettleReason::Interrupted:
-		return FText::FromString(TEXT("中断"));
+		return FText::FromString(TEXT("退出"));
 	default:
 		return FText::FromString(TEXT("未知"));
+	}
+}
+
+FSlateColor UUI_RankPlayerItem::GetSettleReasonColor(EGsRankSettleReason Reason) const
+{
+	switch (Reason)
+	{
+	case EGsRankSettleReason::Completed:
+		return FSlateColor(CompletedReasonColor);
+	case EGsRankSettleReason::TimeOut:
+		return FSlateColor(TimeOutReasonColor);
+	case EGsRankSettleReason::Interrupted:
+		return FSlateColor(InterruptedReasonColor);
+	default:
+		return FSlateColor(UnknownReasonColor);
 	}
 }

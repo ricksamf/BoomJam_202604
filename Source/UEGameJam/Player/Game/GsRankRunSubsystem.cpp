@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "Enemy/EnemyCharacter.h"
 #include "HAL/PlatformTime.h"
+#include "Player/Game/GsPlayerSaveGame.h"
 #include "Settings/GsProjectResourceSettings.h"
 #include "UEGameJam.h"
 
@@ -23,6 +24,22 @@ static const TCHAR* GetRankSettleReasonLogText(EGsRankSettleReason Reason)
 	default:
 		return TEXT("None");
 	}
+}
+
+static float LoadRankTimeLimitSeconds()
+{
+	if (const UGsPlayerSaveGame* SaveGame = UGsPlayerSaveGame::LoadOrCreate())
+	{
+		const float SavedSeconds = SaveGame->GetRankTimeLimitSeconds();
+		if (FMath::IsFinite(SavedSeconds) && SavedSeconds > 0.f)
+		{
+			return SavedSeconds;
+		}
+	}
+
+	const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
+	const float ConfiguredSeconds = ResourceSettings ? ResourceSettings->RankTimeLimitSeconds : 180.0f;
+	return FMath::IsFinite(ConfiguredSeconds) && ConfiguredSeconds > 0.0f ? ConfiguredSeconds : 180.0f;
 }
 
 UGsRankRunSubsystem* UGsRankRunSubsystem::Get(const UObject* WorldContextObject)
@@ -50,6 +67,7 @@ bool UGsRankRunSubsystem::StartRun(const FString& PlayerName)
 	RunStartRealSeconds = FPlatformTime::Seconds();
 	CommittedKillCount = 0;
 	CurrentSegmentKillCount = 0;
+	CurrentRankTimeLimitSeconds = LoadRankTimeLimitSeconds();
 	bHasActiveRun = true;
 	bHasSettledRun = false;
 
@@ -215,6 +233,10 @@ float UGsRankRunSubsystem::GetRemainingTimeSeconds() const
 
 float UGsRankRunSubsystem::GetRankTimeLimitSeconds() const
 {
-	const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
-	return ResourceSettings ? FMath::Max(1.0f, ResourceSettings->RankTimeLimitSeconds) : 180.0f;
+	if (FMath::IsFinite(CurrentRankTimeLimitSeconds) && CurrentRankTimeLimitSeconds > 0.f)
+	{
+		return CurrentRankTimeLimitSeconds;
+	}
+
+	return LoadRankTimeLimitSeconds();
 }

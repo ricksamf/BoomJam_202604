@@ -4,11 +4,16 @@
 
 #include "Audio/BgmSubsystem.h"
 #include "Components/Button.h"
+#include "Components/EditableTextBox.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "GameFramework/GameUserSettings.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/DefaultValueHelper.h"
 #include "Player/Game/GsPlayerSaveGame.h"
+#include "Settings/GsProjectResourceSettings.h"
+#include "UI/Rank/UI_Rank.h"
 #include "UI_SettingsWidget.h"
 
 static FIntPoint GetFallbackWindowModeResolution(const UGameUserSettings* GameUserSettings, EWindowMode::Type WindowMode)
@@ -150,6 +155,18 @@ static int32 GetVolumeIndex(float Volume)
 	return FMath::Clamp(FMath::RoundToInt(Volume * 5.f), 0, 5);
 }
 
+static float GetConfiguredRankTimeLimitSeconds()
+{
+	const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
+	const float ConfiguredSeconds = ResourceSettings ? ResourceSettings->RankTimeLimitSeconds : 180.f;
+	return FMath::IsFinite(ConfiguredSeconds) && ConfiguredSeconds > 0.f ? ConfiguredSeconds : 180.f;
+}
+
+static FString GetRankTimeLimitText(float RankTimeLimitSeconds)
+{
+	return FString::SanitizeFloat(RankTimeLimitSeconds);
+}
+
 void UUI_SettingsMenu::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -244,10 +261,23 @@ void UUI_SettingsMenu::NativeConstruct()
 		SoundSetting->OnSelectionChanged.AddDynamic(this, &UUI_SettingsMenu::HandleSoundChanged);
 	}
 
+	if (RankTimeLimitInputBox)
+	{
+		RankTimeLimitInputBox->OnTextCommitted.RemoveDynamic(this, &UUI_SettingsMenu::HandleRankTimeLimitCommitted);
+		RefreshRankTimeLimitInputText();
+		RankTimeLimitInputBox->OnTextCommitted.AddDynamic(this, &UUI_SettingsMenu::HandleRankTimeLimitCommitted);
+	}
+
 	if (BackBtn)
 	{
 		BackBtn->OnClicked.RemoveDynamic(this, &UUI_SettingsMenu::HandleBackClicked);
 		BackBtn->OnClicked.AddDynamic(this, &UUI_SettingsMenu::HandleBackClicked);
+	}
+
+	if (RankBtn)
+	{
+		RankBtn->OnClicked.RemoveDynamic(this, &UUI_SettingsMenu::HandleRankClicked);
+		RankBtn->OnClicked.AddDynamic(this, &UUI_SettingsMenu::HandleRankClicked);
 	}
 
 	if (Level1)
@@ -321,10 +351,61 @@ void UUI_SettingsMenu::HandleSoundChanged(int32 NewIndex, const FText& NewText)
 	SaveCurrentVolumes();
 }
 
+void UUI_SettingsMenu::HandleRankTimeLimitCommitted(const FText& NewText, ETextCommit::Type CommitMethod)
+{
+	static_cast<void>(CommitMethod);
+
+	float NewRankTimeLimitSeconds = 0.f;
+	const FString TrimmedText = NewText.ToString().TrimStartAndEnd();
+	if (FDefaultValueHelper::ParseFloat(TrimmedText, NewRankTimeLimitSeconds)
+		&& FMath::IsFinite(NewRankTimeLimitSeconds)
+		&& NewRankTimeLimitSeconds > 0.f)
+	{
+		UGsPlayerSaveGame::SaveRankTimeLimitSeconds(NewRankTimeLimitSeconds);
+	}
+
+	RefreshRankTimeLimitInputText();
+}
+
 void UUI_SettingsMenu::HandleBackClicked()
 {
 	RemoveFromParent();
 	OnSettingsMenuClosed.Broadcast();
+}
+
+void UUI_SettingsMenu::HandleRankClicked()
+{
+	const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
+	const TSubclassOf<UUI_Rank> RankWidgetClass = ResourceSettings ? ResourceSettings->RankWidgetClass : nullptr;
+	if (!RankWidgetClass)
+	{
+		return;
+	}
+
+	if (!RankWidget)
+	{
+		if (APlayerController* OwningPlayer = GetOwningPlayer())
+		{
+			RankWidget = CreateWidget<UUI_Rank>(OwningPlayer, RankWidgetClass);
+		}
+		else if (UWorld* World = GetWorld())
+		{
+			RankWidget = CreateWidget<UUI_Rank>(World, RankWidgetClass);
+		}
+	}
+
+	if (!RankWidget)
+	{
+		return;
+	}
+
+	RankWidget->SetVisibility(ESlateVisibility::Visible);
+	if (!RankWidget->IsInViewport())
+	{
+		RankWidget->AddToViewport(20);
+	}
+
+	RankWidget->OpenFullRank();
 }
 
 void UUI_SettingsMenu::HandleLevel1Clicked()
@@ -532,4 +613,26 @@ float UUI_SettingsMenu::GetBGMVolume() const
 float UUI_SettingsMenu::GetSFXVolume() const
 {
 	return SoundSetting ? GetVolumeByIndex(SoundSetting->GetCurrentIndex()) : 1.f;
+}
+
+float UUI_SettingsMenu::GetEffectiveRankTimeLimitSeconds() const
+{
+	if (const UGsPlayerSaveGame* SaveGame = UGsPlayerSaveGame::LoadOrCreate())
+	{
+		const float SavedSeconds = SaveGame->GetRankTimeLimitSeconds();
+		if (FMath::IsFinite(SavedSeconds) && SavedSeconds > 0.f)
+		{
+			return SavedSeconds;
+		}
+	}
+
+	return GetConfiguredRankTimeLimitSeconds();
+}
+
+void UUI_SettingsMenu::RefreshRankTimeLimitInputText() const
+{
+	if (RankTimeLimitInputBox)
+	{
+		RankTimeLimitInputBox->SetText(FText::FromString(GetRankTimeLimitText(GetEffectiveRankTimeLimitSeconds())));
+	}
 }

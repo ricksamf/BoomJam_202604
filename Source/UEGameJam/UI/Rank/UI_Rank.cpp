@@ -46,19 +46,52 @@ static bool CompareRankUiPlayerRecord(const FGsRankPlayerRecord& Left, const FGs
 
 void UUI_Rank::OpenRank()
 {
+	CurrentOpenMode = ERankOpenMode::Normal;
 	SetVisibility(ESlateVisibility::Visible);
 	SetBackMainMenuButtonVisible(false);
-	RefreshRank();
+	SetCloseButtonVisible(false);
+	RefreshRankByMode();
 }
 
 void UUI_Rank::OpenSettlementRank()
 {
+	CurrentOpenMode = ERankOpenMode::Settlement;
 	SetVisibility(ESlateVisibility::Visible);
 	SetBackMainMenuButtonVisible(true);
-	RefreshRank();
+	SetCloseButtonVisible(false);
+	RefreshRankByMode();
+}
+
+void UUI_Rank::OpenFullRank()
+{
+	CurrentOpenMode = ERankOpenMode::Full;
+	SetVisibility(ESlateVisibility::Visible);
+	SetBackMainMenuButtonVisible(false);
+	SetCloseButtonVisible(true);
+	RefreshRankByMode();
 }
 
 void UUI_Rank::RefreshRank()
+{
+	RefreshRankByMode();
+}
+
+void UUI_Rank::RefreshRankByMode()
+{
+	switch (CurrentOpenMode)
+	{
+	case ERankOpenMode::Full:
+		PopulateRankList(true, false, false);
+		break;
+	case ERankOpenMode::Settlement:
+	case ERankOpenMode::Normal:
+	default:
+		PopulateRankList(false, true, true);
+		break;
+	}
+}
+
+void UUI_Rank::PopulateRankList(bool bDisplayAllRecords, bool bMarkCurrentPlayer, bool bPlayAnimation)
 {
 	if (!RankListBox)
 	{
@@ -75,6 +108,8 @@ void UUI_Rank::RefreshRank()
 		return;
 	}
 
+	AddHeaderItem();
+
 	UGsRankSaveGame* RankSaveGame = UGsRankSaveGame::LoadOrCreate();
 	if (!RankSaveGame)
 	{
@@ -88,11 +123,21 @@ void UUI_Rank::RefreshRank()
 	});
 	Records.Sort(CompareRankUiPlayerRecord);
 
-	const FString CurrentPlayerName = GetActiveCurrentPlayerName();
-	const int32 CurrentPlayerIndex = FindCurrentPlayerIndex(Records, CurrentPlayerName);
+	const FString CurrentPlayerName = bMarkCurrentPlayer ? GetActiveCurrentPlayerName() : FString();
+	const int32 CurrentPlayerIndex = bMarkCurrentPlayer ? FindCurrentPlayerIndex(Records, CurrentPlayerName) : INDEX_NONE;
 
 	TArray<int32> DisplayRecordIndices;
-	BuildDisplayRecordIndices(Records, CurrentPlayerIndex, DisplayRecordIndices);
+	if (bDisplayAllRecords)
+	{
+		for (int32 Index = 0; Index < Records.Num(); ++Index)
+		{
+			DisplayRecordIndices.Add(Index);
+		}
+	}
+	else
+	{
+		BuildDisplayRecordIndices(Records, CurrentPlayerIndex, DisplayRecordIndices);
+	}
 
 	for (int32 DisplayRecordIndex : DisplayRecordIndices)
 	{
@@ -101,16 +146,7 @@ void UUI_Rank::RefreshRank()
 			continue;
 		}
 
-		UUI_RankPlayerItem* RankItem = nullptr;
-		if (APlayerController* OwningPlayer = GetOwningPlayer())
-		{
-			RankItem = CreateWidget<UUI_RankPlayerItem>(OwningPlayer, RankPlayerItemClass);
-		}
-		else if (UWorld* World = GetWorld())
-		{
-			RankItem = CreateWidget<UUI_RankPlayerItem>(World, RankPlayerItemClass);
-		}
-
+		UUI_RankPlayerItem* RankItem = CreateRankPlayerItem();
 		if (!RankItem)
 		{
 			continue;
@@ -118,11 +154,53 @@ void UUI_Rank::RefreshRank()
 
 		const bool bIsCurrentPlayer = DisplayRecordIndex == CurrentPlayerIndex;
 		RankItem->SetupRankItem(DisplayRecordIndex + 1, Records[DisplayRecordIndex], bIsCurrentPlayer);
+		RankItem->SetRenderOpacity(1.0f);
+		RankItem->SetRenderTranslation(FVector2D::ZeroVector);
 		RankListBox->AddChildToVerticalBox(RankItem);
 		RankItems.Add(RankItem);
 	}
 
-	PlayOpeningAnimation();
+	if (bPlayAnimation)
+	{
+		PlayOpeningAnimation();
+	}
+}
+
+UUI_RankPlayerItem* UUI_Rank::CreateRankPlayerItem() const
+{
+	if (!RankPlayerItemClass)
+	{
+		return nullptr;
+	}
+
+	if (APlayerController* OwningPlayer = GetOwningPlayer())
+	{
+		return CreateWidget<UUI_RankPlayerItem>(OwningPlayer, RankPlayerItemClass);
+	}
+
+	if (UWorld* World = GetWorld())
+	{
+		return CreateWidget<UUI_RankPlayerItem>(World, RankPlayerItemClass);
+	}
+
+	return nullptr;
+}
+
+void UUI_Rank::AddHeaderItem()
+{
+	if (!RankListBox)
+	{
+		return;
+	}
+
+	UUI_RankPlayerItem* HeaderItem = CreateRankPlayerItem();
+	if (!HeaderItem)
+	{
+		return;
+	}
+
+	HeaderItem->SetupHeaderItem();
+	RankListBox->AddChildToVerticalBox(HeaderItem);
 }
 
 void UUI_Rank::SetCurrentPlayerName(const FString& InCurrentPlayerName)
@@ -145,6 +223,12 @@ void UUI_Rank::NativeConstruct()
 		BackMainMenuButton->OnClicked.AddDynamic(this, &UUI_Rank::HandleBackMainMenuClicked);
 	}
 
+	if (CloseButton)
+	{
+		CloseButton->OnClicked.RemoveDynamic(this, &UUI_Rank::HandleCloseClicked);
+		CloseButton->OnClicked.AddDynamic(this, &UUI_Rank::HandleCloseClicked);
+	}
+
 	OpenRank();
 }
 
@@ -153,6 +237,11 @@ void UUI_Rank::NativeDestruct()
 	if (BackMainMenuButton)
 	{
 		BackMainMenuButton->OnClicked.RemoveDynamic(this, &UUI_Rank::HandleBackMainMenuClicked);
+	}
+
+	if (CloseButton)
+	{
+		CloseButton->OnClicked.RemoveDynamic(this, &UUI_Rank::HandleCloseClicked);
 	}
 
 	AnimatedItems.Reset();
@@ -307,6 +396,14 @@ void UUI_Rank::SetBackMainMenuButtonVisible(bool bVisible)
 	}
 }
 
+void UUI_Rank::SetCloseButtonVisible(bool bVisible)
+{
+	if (CloseButton)
+	{
+		CloseButton->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+}
+
 void UUI_Rank::HandleBackMainMenuClicked()
 {
 	UGameplayStatics::SetGamePaused(this, false);
@@ -327,6 +424,11 @@ void UUI_Rank::HandleBackMainMenuClicked()
 	{
 		UGameplayStatics::OpenLevel(this, MainMenuLevelName);
 	}
+}
+
+void UUI_Rank::HandleCloseClicked()
+{
+	RemoveFromParent();
 }
 
 void UUI_Rank::BuildDisplayRecordIndices(const TArray<FGsRankPlayerRecord>& Records, int32 CurrentPlayerIndex, TArray<int32>& OutIndices) const

@@ -68,6 +68,7 @@ private:
 	double RunStartRealSeconds = 0.0;
 	int32 CommittedKillCount = 0;
 	int32 CurrentSegmentKillCount = 0;
+	float CurrentRankTimeLimitSeconds = 0.0f;
 	bool bHasActiveRun = false;
 	bool bHasSettledRun = false;
 };

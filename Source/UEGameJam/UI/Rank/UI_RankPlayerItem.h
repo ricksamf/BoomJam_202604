@@ -9,6 +9,7 @@
 #include "UI_RankPlayerItem.generated.h"
 
 class UTextBlock;
+class UImage;
 
 /**
  * 排行榜玩家条目。
@@ -72,6 +73,10 @@ protected:
 	/** 结束原因文本，需要在 Widget 蓝图中命名为 ReasonText */
 	UPROPERTY(meta=(BindWidgetOptional))
 	TObjectPtr<UTextBlock> ReasonText;
+
+	/** 当前玩家高亮图片，需要在 Widget 蓝图中命名为 Highlight */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UImage> Highlight;
 
 private:
 	static FText FormatElapsedTime(int32 ElapsedMilliseconds);

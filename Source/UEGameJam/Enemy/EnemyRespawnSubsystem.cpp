@@ -6,6 +6,7 @@
 #include "EnemyCharacter.h"
 #include "Player/Character/GsPlayer.h"
 #include "Player/Game/GsLevelStateGameState.h"
+#include "Player/Game/GsRankRunSubsystem.h"
 #include "Player/Scene/GsRespawnPoint.h"
 
 #include "Engine/Engine.h"
@@ -147,6 +148,23 @@ void UEnemyRespawnSubsystem::RespawnAllDead()
 void UEnemyRespawnSubsystem::SetRespawnEnabled(bool bEnabled)
 {
 	bRespawnEnabled = bEnabled;
+
+	if (!bRespawnEnabled)
+	{
+		int32 CurrentCheckpoint = INDEX_NONE;
+		if (UWorld* World = GetWorld())
+		{
+			if (AGsLevelStateGameState* LevelState = World->GetGameState<AGsLevelStateGameState>())
+			{
+				CurrentCheckpoint = LevelState->GetCurrentCheckpointIndex();
+			}
+		}
+
+		if (UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this))
+		{
+			RankRunSubsystem->CommitCurrentSegmentKills(CurrentCheckpoint);
+		}
+	}
 
 	UE_LOG(LogTemp, Log, TEXT("[EnemyRespawn] Respawn enabled set to %d"), bRespawnEnabled ? 1 : 0);
 }

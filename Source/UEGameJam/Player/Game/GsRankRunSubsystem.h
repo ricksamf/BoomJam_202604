@@ -50,6 +50,10 @@ public:
 	UFUNCTION(BlueprintPure, Category="Rank")
 	float GetRemainingTimeSeconds() const;
 
+	/** 获取当前有效击杀数，包含已提交击杀和当前段击杀 */
+	UFUNCTION(BlueprintPure, Category="Rank")
+	int32 GetCurrentKillCount() const { return CommittedKillCount + CurrentSegmentKillCount; }
+
 	/** 当前本局是否已经结算，防止重复保存成绩 */
 	UFUNCTION(BlueprintPure, Category="Rank")
 	bool HasSettledRun() const { return bHasSettledRun; }

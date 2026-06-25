@@ -81,6 +81,7 @@ static TArray<FIntPoint> GetDefaultResolutionOptions()
 	Options.Emplace(1600, 900);
 	Options.Emplace(1920, 1080);
 	Options.Emplace(2560, 1440);
+	Options.Emplace(2944, 1840);
 	Options.Emplace(3840, 2160);
 	return Options;
 }

@@ -80,6 +80,7 @@ protected:
 	                    bool bFromSweep, const FHitResult& SweepResult);
 
 	void IgnoreActiveBallCollision();
+	float GetProjectileCollisionRadius() const;
 	bool TryHandleRealmBoundaryBlock(const FVector& Start, const FVector& End);
 	static bool FindSphereBoundaryIntersection(const FVector& Start, const FVector& End,
 		const FVector& Center, float Radius, FVector& OutImpactPoint, FVector& OutImpactNormal);

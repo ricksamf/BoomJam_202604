@@ -40,10 +40,6 @@ protected:
 	UPROPERTY(Transient)
 	TMap<int32, TObjectPtr<AGsRespawnPoint>> RespawnPointsByIndex;
 
-	/** 超时结算时显示的排行榜界面蓝图类 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Rank")
-	TSubclassOf<UUI_Rank> RankWidgetClass;
-
 	UPROPERTY(Transient)
 	TObjectPtr<UUI_Rank> RankWidget;
 

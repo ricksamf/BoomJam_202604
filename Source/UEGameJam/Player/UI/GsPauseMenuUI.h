@@ -42,10 +42,6 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> ReturnMainMenuButton;
 
-	/** 结算排行榜界面蓝图类，点击返回主界面时创建并显示 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Player UI|Pause")
-	TSubclassOf<UUI_Rank> RankWidgetClass;
-
 private:
 	bool bIsPauseMenuVisible = false;
 

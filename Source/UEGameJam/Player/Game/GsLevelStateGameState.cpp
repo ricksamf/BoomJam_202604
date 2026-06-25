@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Player/Game/GsRankRunSubsystem.h"
 #include "Player/Scene/GsRespawnPoint.h"
+#include "Settings/GsProjectResourceSettings.h"
 #include "UI/Rank/UI_Rank.h"
 #include "UEGameJam.h"
 
@@ -189,6 +190,8 @@ void AGsLevelStateGameState::ActivateInitialCheckpoint()
 
 void AGsLevelStateGameState::ShowTimeoutRankWidget(APlayerController* PlayerController)
 {
+	const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
+	const TSubclassOf<UUI_Rank> RankWidgetClass = ResourceSettings ? ResourceSettings->RankWidgetClass : nullptr;
 	if (!RankWidgetClass || !PlayerController)
 	{
 		return;

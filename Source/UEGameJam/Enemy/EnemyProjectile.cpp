@@ -163,7 +163,7 @@ void AEnemyProjectile::OnHit(UPrimitiveComponent* /*HitComp*/, AActor* OtherActo
 
 void AEnemyProjectile::OnBeginOverlap(UPrimitiveComponent* /*OverlappedComp*/, AActor* OtherActor,
                                       UPrimitiveComponent* OtherComp, int32 /*OtherBodyIndex*/,
-                                      bool /*bFromSweep*/, const FHitResult& SweepResult)
+                                      bool bFromSweep, const FHitResult& SweepResult)
 {
 	// 过滤：自己 / 发射者本人 / 其它敌人（任何不带 PlayerTag 的 Pawn）一律不处理，
 	// 子弹继续飞。
@@ -181,7 +181,8 @@ void AEnemyProjectile::OnBeginOverlap(UPrimitiveComponent* /*OverlappedComp*/, A
 		return;
 	}
 
-	if (bHasPreviousLocation && TryHandleRealmBoundaryBlock(PreviousLocation, GetActorLocation()))
+	const FVector BoundaryCheckEnd = bFromSweep ? FVector(SweepResult.Location) : GetActorLocation();
+	if (bHasPreviousLocation && TryHandleRealmBoundaryBlock(PreviousLocation, BoundaryCheckEnd))
 	{
 		return;
 	}
@@ -221,6 +222,11 @@ void AEnemyProjectile::IgnoreActiveBallCollision()
 	}
 }
 
+float AEnemyProjectile::GetProjectileCollisionRadius() const
+{
+	return CollisionComp ? FMath::Max(0.0f, CollisionComp->GetScaledSphereRadius()) : 0.0f;
+}
+
 bool AEnemyProjectile::GetActiveBallBoundary(FVector& OutCenter, float& OutRadius)
 {
 	AGsSkillBigBall* Ball = AGsSkillBigBall::GetActiveInstance();
@@ -248,24 +254,42 @@ bool AEnemyProjectile::TryHandleRealmBoundaryBlock(const FVector& Start, const F
 	}
 
 	// 策略：只要蓝球存在，边界就固定为其设计最大半径（BaseRevealRadius），
-	// 彻底忽略 Growing/Shrinking 动画期的半径抖动。这样 Start/End 两端用同一个
-	// 稳定半径做内外判定，不会出现动画过程中跨界事件被吞的情况。
+	// 彻底忽略 Growing/Shrinking 动画期的半径抖动。子弹是有体积的球体：
+	// 从球内向外飞时，中心到达 Radius - ProjectileRadius 就应被球壳挡下；
+	// 从球外向内飞时，中心到达 Radius + ProjectileRadius 就应被球壳挡下。
+	const float ProjectileRadius = GetProjectileCollisionRadius();
+	const float StartDistSq = FVector::DistSquared(Start, Center);
+	const float EndDistSq = FVector::DistSquared(End, Center);
 	const float RadSq = FMath::Square(Radius);
-	const bool bStartInside = FVector::DistSquared(Start, Center) <= RadSq;
-	const bool bEndInside = FVector::DistSquared(End, Center) <= RadSq;
+	const bool bStartInside = StartDistSq <= RadSq;
+	const float VolumeAwareRadius = bStartInside
+		? FMath::Max(0.0f, Radius - ProjectileRadius)
+		: Radius + ProjectileRadius;
+	const float VolumeAwareRadSq = FMath::Square(VolumeAwareRadius);
+	const bool bStartBlocked = bStartInside ? StartDistSq > VolumeAwareRadSq : StartDistSq < VolumeAwareRadSq;
+	const bool bEndBlocked = bStartInside ? EndDistSq > VolumeAwareRadSq : EndDistSq < VolumeAwareRadSq;
+	const bool bMovingAwayFromBoundary = bStartInside ? EndDistSq < StartDistSq : EndDistSq > StartDistSq;
 
-	if (bStartInside == bEndInside)
+	if (!bEndBlocked || (bStartBlocked && bMovingAwayFromBoundary))
 	{
 		return false;
 	}
 
-	FVector ImpactPoint = End;
+	FVector CenterContactPoint = End;
 	FVector ImpactNormal = (End - Start).GetSafeNormal();
-	if (!FindSphereBoundaryIntersection(Start, End, Center, Radius, ImpactPoint, ImpactNormal))
+	if (!FindSphereBoundaryIntersection(Start, End, Center, VolumeAwareRadius, CenterContactPoint, ImpactNormal))
 	{
 		const FVector FallbackDir = (End - Start).GetSafeNormal();
-		ImpactPoint = Start;
+		CenterContactPoint = bStartBlocked ? Start : End;
 		ImpactNormal = bStartInside ? FallbackDir : -FallbackDir;
+	}
+
+	FVector ImpactPoint = CenterContactPoint;
+	const FVector SurfaceDir = (CenterContactPoint - Center).GetSafeNormal();
+	if (!SurfaceDir.IsNearlyZero())
+	{
+		ImpactPoint = Center + SurfaceDir * Radius;
+		ImpactNormal = SurfaceDir;
 	}
 
 	HandleImpactAndDestroy(ImpactPoint, ImpactNormal);

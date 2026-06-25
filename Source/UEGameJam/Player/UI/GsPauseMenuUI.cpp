@@ -6,9 +6,16 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/Game/GsRankRunSubsystem.h"
+#include "Settings/GsProjectResourceSettings.h"
 #include "UI/Rank/UI_Rank.h"
 
 static const FName MainMenuLevelName = TEXT("LEVEL_MainMenu");
+
+static TSubclassOf<UUI_Rank> GetConfiguredRankWidgetClass()
+{
+	const UGsProjectResourceSettings* ResourceSettings = GetDefault<UGsProjectResourceSettings>();
+	return ResourceSettings ? ResourceSettings->RankWidgetClass : nullptr;
+}
 
 void UGsPauseMenuUI::ShowPauseMenu()
 {
@@ -110,7 +117,7 @@ void UGsPauseMenuUI::HandleReturnMainMenuClicked()
 		RankRunSubsystem->SettleRun(this, EGsRankSettleReason::Interrupted);
 	}
 
-	if (!RankWidgetClass)
+	if (!GetConfiguredRankWidgetClass())
 	{
 		HidePauseMenu();
 		UGameplayStatics::OpenLevel(this, MainMenuLevelName);
@@ -131,6 +138,12 @@ void UGsPauseMenuUI::HandleReturnMainMenuClicked()
 
 bool UGsPauseMenuUI::ShowSettlementRankWidget()
 {
+	const TSubclassOf<UUI_Rank> RankWidgetClass = GetConfiguredRankWidgetClass();
+	if (!RankWidgetClass)
+	{
+		return false;
+	}
+
 	if (RankWidget)
 	{
 		if (!RankWidget->IsInViewport())

@@ -8,6 +8,7 @@
 
 class UAudioDataAsset;
 class UDataTable;
+class UUI_Rank;
 class USoundClass;
 
 /**
@@ -44,6 +45,10 @@ public:
 	/** 排行榜关卡全局限时时长，单位秒 */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Rank", meta=(ClampMin=1.0, Units="s"))
 	float RankTimeLimitSeconds = 180.0f;
+
+	/** 结算排行榜界面蓝图类，超时和退出结算时统一使用 */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Rank")
+	TSubclassOf<UUI_Rank> RankWidgetClass;
 	
 	/** 是否显示敌人相关的屏幕调试信息 */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category="Debug")

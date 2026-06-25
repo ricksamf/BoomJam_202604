@@ -6,6 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "Enemy/EnemyCharacter.h"
+#include "Enemy/EnemyRespawnSubsystem.h"
 #include "HAL/PlatformTime.h"
 #include "Player/Game/GsPlayerSaveGame.h"
 #include "Settings/GsProjectResourceSettings.h"
@@ -81,14 +82,29 @@ void UGsRankRunSubsystem::RegisterPlayerKill(AEnemyCharacter* KilledEnemy)
 		return;
 	}
 
-	++CurrentSegmentKillCount;
+	bool bWillRespawnOnPlayerRespawn = true;
+	if (const UEnemyRespawnSubsystem* EnemyRespawnSubsystem = UEnemyRespawnSubsystem::Get(KilledEnemy))
+	{
+		bWillRespawnOnPlayerRespawn = EnemyRespawnSubsystem->WillEnemyRespawnOnPlayerRespawn(KilledEnemy);
+	}
+
+	if (bWillRespawnOnPlayerRespawn)
+	{
+		++CurrentSegmentKillCount;
+	}
+	else
+	{
+		++CommittedKillCount;
+	}
 
 	UE_LOG(
 		LogUEGameJam,
 		Log,
-		TEXT("[Rank] Player kill registered. Enemy=%s SegmentKills=%d TotalPreview=%d"),
+		TEXT("[Rank] Player kill registered. Enemy=%s Persistent=%d SegmentKills=%d CommittedTotal=%d TotalPreview=%d"),
 		*GetNameSafe(KilledEnemy),
+		bWillRespawnOnPlayerRespawn ? 0 : 1,
 		CurrentSegmentKillCount,
+		CommittedKillCount,
 		CommittedKillCount + CurrentSegmentKillCount);
 
 	if (GEngine)
@@ -97,7 +113,11 @@ void UGsRankRunSubsystem::RegisterPlayerKill(AEnemyCharacter* KilledEnemy)
 			-1,
 			3.0f,
 			FColor::Green,
-			FString::Printf(TEXT("[Rank] Kill +1 Segment=%d Total=%d"), CurrentSegmentKillCount, CommittedKillCount + CurrentSegmentKillCount));
+			FString::Printf(
+				TEXT("[Rank] Kill +1 %s Segment=%d Total=%d"),
+				bWillRespawnOnPlayerRespawn ? TEXT("Segment") : TEXT("Committed"),
+				CurrentSegmentKillCount,
+				CommittedKillCount + CurrentSegmentKillCount));
 	}
 }
 

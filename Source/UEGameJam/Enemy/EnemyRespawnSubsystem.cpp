@@ -76,6 +76,37 @@ void UEnemyRespawnSubsystem::MarkDead(int32 RecordId)
 	}
 }
 
+bool UEnemyRespawnSubsystem::WillEnemyRespawnOnPlayerRespawn(const AEnemyCharacter* Enemy) const
+{
+	if (!Enemy)
+	{
+		return false;
+	}
+
+	const int32 RecordId = Enemy->RespawnRecordId;
+	if (!Records.IsValidIndex(RecordId))
+	{
+		return true;
+	}
+
+	const FEnemyRespawnRecord& Rec = Records[RecordId];
+	if (!bRespawnEnabled || !Rec.bRespawnEnabled || !Rec.EnemyClass)
+	{
+		return false;
+	}
+
+	int32 CurrentCheckpoint = INDEX_NONE;
+	if (const UWorld* World = GetWorld())
+	{
+		if (const AGsLevelStateGameState* LevelState = World->GetGameState<AGsLevelStateGameState>())
+		{
+			CurrentCheckpoint = LevelState->GetCurrentCheckpointIndex();
+		}
+	}
+
+	return Rec.OwningCheckpoint > CurrentCheckpoint;
+}
+
 void UEnemyRespawnSubsystem::RespawnAllDead()
 {
 	if (!bRespawnEnabled)

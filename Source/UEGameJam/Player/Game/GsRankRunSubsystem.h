@@ -26,7 +26,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Rank")
 	bool StartRun(const FString& PlayerName);
 
-	/** 记录一次玩家近战击杀，当前段死亡回滚前会暂存 */
+	/** 记录一次玩家击杀；会随玩家复活重刷的敌人暂存到当前段，不会重刷的敌人立即计入已提交击杀 */
 	UFUNCTION(BlueprintCallable, Category="Rank")
 	void RegisterPlayerKill(AEnemyCharacter* KilledEnemy);
 

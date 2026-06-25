@@ -18,6 +18,7 @@
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Player/Game/GsRankRunSubsystem.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 
@@ -276,6 +277,11 @@ void AEnemyCharacter::Die()
 		IndicatorWidget->SetVisibility(false);
 	}
 	GetWorldTimerManager().ClearTimer(IndicatorVisibilityTimer);
+
+	if (UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this))
+	{
+		RankRunSubsystem->RegisterEnemyDeath(this);
+	}
 
 	OnEnemyDeath.Broadcast(this);
 

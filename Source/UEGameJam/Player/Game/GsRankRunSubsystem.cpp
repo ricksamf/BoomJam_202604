@@ -75,17 +75,17 @@ bool UGsRankRunSubsystem::StartRun(const FString& PlayerName)
 	return true;
 }
 
-void UGsRankRunSubsystem::RegisterPlayerKill(AEnemyCharacter* KilledEnemy)
+void UGsRankRunSubsystem::RegisterEnemyDeath(AEnemyCharacter* DeadEnemy)
 {
-	if (!bHasActiveRun || bHasSettledRun || !IsValid(KilledEnemy))
+	if (!bHasActiveRun || bHasSettledRun || !IsValid(DeadEnemy))
 	{
 		return;
 	}
 
 	bool bWillRespawnOnPlayerRespawn = true;
-	if (const UEnemyRespawnSubsystem* EnemyRespawnSubsystem = UEnemyRespawnSubsystem::Get(KilledEnemy))
+	if (const UEnemyRespawnSubsystem* EnemyRespawnSubsystem = UEnemyRespawnSubsystem::Get(DeadEnemy))
 	{
-		bWillRespawnOnPlayerRespawn = EnemyRespawnSubsystem->WillEnemyRespawnOnPlayerRespawn(KilledEnemy);
+		bWillRespawnOnPlayerRespawn = EnemyRespawnSubsystem->WillEnemyRespawnOnPlayerRespawn(DeadEnemy);
 	}
 
 	if (bWillRespawnOnPlayerRespawn)
@@ -100,8 +100,8 @@ void UGsRankRunSubsystem::RegisterPlayerKill(AEnemyCharacter* KilledEnemy)
 	UE_LOG(
 		LogUEGameJam,
 		Log,
-		TEXT("[Rank] Player kill registered. Enemy=%s Persistent=%d SegmentKills=%d CommittedTotal=%d TotalPreview=%d"),
-		*GetNameSafe(KilledEnemy),
+		TEXT("[Rank] Enemy death registered. Enemy=%s Persistent=%d SegmentKills=%d CommittedTotal=%d TotalPreview=%d"),
+		*GetNameSafe(DeadEnemy),
 		bWillRespawnOnPlayerRespawn ? 0 : 1,
 		CurrentSegmentKillCount,
 		CommittedKillCount,

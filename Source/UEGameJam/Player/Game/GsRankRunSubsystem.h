@@ -26,9 +26,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Rank")
 	bool StartRun(const FString& PlayerName);
 
-	/** 记录一次玩家击杀；会随玩家复活重刷的敌人暂存到当前段，不会重刷的敌人立即计入已提交击杀 */
+	/** 记录一次敌人死亡；会随玩家复活重刷的敌人暂存到当前段，不会重刷的敌人立即计入已提交击杀 */
 	UFUNCTION(BlueprintCallable, Category="Rank")
-	void RegisterPlayerKill(AEnemyCharacter* KilledEnemy);
+	void RegisterEnemyDeath(AEnemyCharacter* DeadEnemy);
 
 	/** 提交当前段击杀，进入下一段 */
 	UFUNCTION(BlueprintCallable, Category="Rank")

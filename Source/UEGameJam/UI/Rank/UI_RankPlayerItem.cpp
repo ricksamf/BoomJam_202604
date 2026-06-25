@@ -2,6 +2,7 @@
 
 #include "UI_RankPlayerItem.h"
 
+#include "Components/Image.h"
 #include "Components/TextBlock.h"
 
 void UUI_RankPlayerItem::SetupRankItem(int32 Rank, const FGsRankPlayerRecord& Record, bool bIsCurrentPlayer)
@@ -32,6 +33,11 @@ void UUI_RankPlayerItem::SetupRankItem(int32 Rank, const FGsRankPlayerRecord& Re
 	{
 		ReasonText->SetText(GetSettleReasonText(Record.SettleReason));
 		ReasonText->SetColorAndOpacity(GetSettleReasonColor(Record.SettleReason));
+	}
+
+	if (Highlight)
+	{
+		Highlight->SetVisibility(bIsCurrentPlayerItem ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 
 	const float TargetScale = bIsCurrentPlayerItem ? CurrentPlayerScale : NormalPlayerScale;
@@ -66,6 +72,11 @@ void UUI_RankPlayerItem::SetupHeaderItem()
 	{
 		ReasonText->SetText(FText::FromString(TEXT("结算")));
 		ReasonText->SetColorAndOpacity(FSlateColor(UnknownReasonColor));
+	}
+
+	if (Highlight)
+	{
+		Highlight->SetVisibility(ESlateVisibility::Hidden);
 	}
 
 	SetRenderScale(FVector2D(NormalPlayerScale, NormalPlayerScale));

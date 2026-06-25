@@ -159,14 +159,18 @@ void UPlayerUI::UpdateCountdownText()
 	const UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this);
 	if (!RankRunSubsystem || !RankRunSubsystem->HasActiveRun())
 	{
-		CountdownText->SetText(FText::FromString(TEXT("--:--")));
+		CountdownText->SetText(FText::FromString(TEXT("--:-- | 杀敌：0")));
 		return;
 	}
 
 	const int32 RemainingSeconds = FMath::Max(0, FMath::CeilToInt(RankRunSubsystem->GetRemainingTimeSeconds()));
 	const int32 Minutes = RemainingSeconds / 60;
 	const int32 Seconds = RemainingSeconds % 60;
-	CountdownText->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds)));
+	CountdownText->SetText(FText::FromString(FString::Printf(
+		TEXT("%02d:%02d | 杀敌：%d"),
+		Minutes,
+		Seconds,
+		RankRunSubsystem->GetCurrentKillCount())));
 }
 
 void UPlayerUI::ShowRespawnHint(const FText& HintText)

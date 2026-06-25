@@ -6,6 +6,7 @@
 #include "EnemyCharacter.h"
 #include "Player/Character/GsPlayer.h"
 #include "Player/Game/GsLevelStateGameState.h"
+#include "Player/Game/GsRankRunSubsystem.h"
 #include "Player/Scene/GsRespawnPoint.h"
 
 #include "Engine/Engine.h"
@@ -73,6 +74,37 @@ void UEnemyRespawnSubsystem::MarkDead(int32 RecordId)
 	{
 		Records[RecordId].bIsDead = true;
 	}
+}
+
+bool UEnemyRespawnSubsystem::WillEnemyRespawnOnPlayerRespawn(const AEnemyCharacter* Enemy) const
+{
+	if (!Enemy)
+	{
+		return false;
+	}
+
+	const int32 RecordId = Enemy->RespawnRecordId;
+	if (!Records.IsValidIndex(RecordId))
+	{
+		return true;
+	}
+
+	const FEnemyRespawnRecord& Rec = Records[RecordId];
+	if (!bRespawnEnabled || !Rec.bRespawnEnabled || !Rec.EnemyClass)
+	{
+		return false;
+	}
+
+	int32 CurrentCheckpoint = INDEX_NONE;
+	if (const UWorld* World = GetWorld())
+	{
+		if (const AGsLevelStateGameState* LevelState = World->GetGameState<AGsLevelStateGameState>())
+		{
+			CurrentCheckpoint = LevelState->GetCurrentCheckpointIndex();
+		}
+	}
+
+	return Rec.OwningCheckpoint > CurrentCheckpoint;
 }
 
 void UEnemyRespawnSubsystem::RespawnAllDead()
@@ -147,6 +179,23 @@ void UEnemyRespawnSubsystem::RespawnAllDead()
 void UEnemyRespawnSubsystem::SetRespawnEnabled(bool bEnabled)
 {
 	bRespawnEnabled = bEnabled;
+
+	if (!bRespawnEnabled)
+	{
+		int32 CurrentCheckpoint = INDEX_NONE;
+		if (UWorld* World = GetWorld())
+		{
+			if (AGsLevelStateGameState* LevelState = World->GetGameState<AGsLevelStateGameState>())
+			{
+				CurrentCheckpoint = LevelState->GetCurrentCheckpointIndex();
+			}
+		}
+
+		if (UGsRankRunSubsystem* RankRunSubsystem = UGsRankRunSubsystem::Get(this))
+		{
+			RankRunSubsystem->CommitCurrentSegmentKills(CurrentCheckpoint);
+		}
+	}
 
 	UE_LOG(LogTemp, Log, TEXT("[EnemyRespawn] Respawn enabled set to %d"), bRespawnEnabled ? 1 : 0);
 }

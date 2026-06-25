@@ -62,6 +62,9 @@ public:
 	/** 怪物 Die 调用。 */
 	void MarkDead(int32 RecordId);
 
+	/** 按当前复活规则判断这个敌人死亡后玩家复活时是否会重刷。未登记敌人按普通可回退敌人处理。 */
+	bool WillEnemyRespawnOnPlayerRespawn(const AEnemyCharacter* Enemy) const;
+
 	/** 把所有 bIsDead 的记录重新 spawn。玩家 OnRespawn 触发；也可手动调试。
 	 *  当前 A 模式：所有死怪一次性全复活。 */
 	UFUNCTION(BlueprintCallable, Category="Enemy|Respawn")

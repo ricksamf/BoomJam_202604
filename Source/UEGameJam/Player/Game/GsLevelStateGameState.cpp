@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Player/Game/GsRankRunSubsystem.h"
 #include "Player/Scene/GsRespawnPoint.h"
+#include "UI/Rank/UI_Rank.h"
 #include "UEGameJam.h"
 
 AGsLevelStateGameState::AGsLevelStateGameState()
@@ -50,6 +51,12 @@ void AGsLevelStateGameState::Tick(float DeltaSeconds)
 	{
 		PlayerController->SetIgnoreMoveInput(true);
 		PlayerController->SetIgnoreLookInput(true);
+		PlayerController->bShowMouseCursor = true;
+
+		FInputModeUIOnly InputMode;
+		PlayerController->SetInputMode(InputMode);
+
+		ShowTimeoutRankWidget(PlayerController);
 	}
 
 	UGameplayStatics::SetGamePaused(this, true);
@@ -178,4 +185,29 @@ void AGsLevelStateGameState::ActivateInitialCheckpoint()
 	{
 		ActivateCheckpointByIndex(FirstCheckpointIndex);
 	}
+}
+
+void AGsLevelStateGameState::ShowTimeoutRankWidget(APlayerController* PlayerController)
+{
+	if (!RankWidgetClass || !PlayerController)
+	{
+		return;
+	}
+
+	if (!RankWidget)
+	{
+		RankWidget = CreateWidget<UUI_Rank>(PlayerController, RankWidgetClass);
+	}
+
+	if (!RankWidget)
+	{
+		return;
+	}
+
+	if (!RankWidget->IsInViewport())
+	{
+		RankWidget->AddToViewport(20);
+	}
+
+	RankWidget->OpenSettlementRank();
 }

@@ -7,6 +7,7 @@
 #include "GsLevelStateGameState.generated.h"
 
 class AGsRespawnPoint;
+class UUI_Rank;
 
 /**
  * 保存当前关卡运行时复活进度。
@@ -38,6 +39,13 @@ protected:
 
 	UPROPERTY(Transient)
 	TMap<int32, TObjectPtr<AGsRespawnPoint>> RespawnPointsByIndex;
+
+	/** 超时结算时显示的排行榜界面蓝图类 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Rank")
+	TSubclassOf<UUI_Rank> RankWidgetClass;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UUI_Rank> RankWidget;
 
 protected:
 	virtual void BeginPlay() override;
@@ -71,4 +79,5 @@ public:
 private:
 	void CacheRespawnPoints();
 	void ActivateInitialCheckpoint();
+	void ShowTimeoutRankWidget(APlayerController* PlayerController);
 };

@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/Game/GsRankRunSubsystem.h"
+#include "UI/Rank/UI_Rank.h"
 
 static const FName MainMenuLevelName = TEXT("LEVEL_MainMenu");
 
@@ -109,6 +110,64 @@ void UGsPauseMenuUI::HandleReturnMainMenuClicked()
 		RankRunSubsystem->SettleRun(this, EGsRankSettleReason::Interrupted);
 	}
 
-	HidePauseMenu();
-	UGameplayStatics::OpenLevel(this, MainMenuLevelName);
+	if (!RankWidgetClass)
+	{
+		HidePauseMenu();
+		UGameplayStatics::OpenLevel(this, MainMenuLevelName);
+		return;
+	}
+
+	if (!ShowSettlementRankWidget())
+	{
+		HidePauseMenu();
+		UGameplayStatics::OpenLevel(this, MainMenuLevelName);
+		return;
+	}
+
+	bIsPauseMenuVisible = false;
+	SetVisibility(ESlateVisibility::Hidden);
+	UGameplayStatics::SetGamePaused(this, true);
+}
+
+bool UGsPauseMenuUI::ShowSettlementRankWidget()
+{
+	if (RankWidget)
+	{
+		if (!RankWidget->IsInViewport())
+		{
+			RankWidget->AddToViewport(20);
+		}
+	}
+	else if (APlayerController* OwningPlayer = GetOwningPlayer())
+	{
+		RankWidget = CreateWidget<UUI_Rank>(OwningPlayer, RankWidgetClass);
+	}
+	else if (UWorld* World = GetWorld())
+	{
+		RankWidget = CreateWidget<UUI_Rank>(World, RankWidgetClass);
+	}
+
+	if (!RankWidget)
+	{
+		return false;
+	}
+
+	if (!RankWidget->IsInViewport())
+	{
+		RankWidget->AddToViewport(20);
+	}
+
+	RankWidget->OpenSettlementRank();
+
+	if (APlayerController* PlayerController = GetOwningPlayer())
+	{
+		PlayerController->bShowMouseCursor = true;
+		PlayerController->SetIgnoreMoveInput(true);
+		PlayerController->SetIgnoreLookInput(true);
+
+		FInputModeUIOnly InputMode;
+		PlayerController->SetInputMode(InputMode);
+	}
+
+	return true;
 }

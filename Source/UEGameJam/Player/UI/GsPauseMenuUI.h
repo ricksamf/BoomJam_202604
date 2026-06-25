@@ -7,6 +7,7 @@
 #include "GsPauseMenuUI.generated.h"
 
 class UButton;
+class UUI_Rank;
 
 /**
  * 游戏内暂停菜单 UI。
@@ -41,12 +42,21 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> ReturnMainMenuButton;
 
+	/** 结算排行榜界面蓝图类，点击返回主界面时创建并显示 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Player UI|Pause")
+	TSubclassOf<UUI_Rank> RankWidgetClass;
+
 private:
 	bool bIsPauseMenuVisible = false;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UUI_Rank> RankWidget;
 
 	UFUNCTION()
 	void HandleResumeClicked();
 
 	UFUNCTION()
 	void HandleReturnMainMenuClicked();
+
+	bool ShowSettlementRankWidget();
 };

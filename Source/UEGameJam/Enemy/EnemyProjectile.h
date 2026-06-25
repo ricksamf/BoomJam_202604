@@ -79,6 +79,7 @@ protected:
 	                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 	                    bool bFromSweep, const FHitResult& SweepResult);
 
+	void IgnoreActiveBallCollision();
 	bool TryHandleRealmBoundaryBlock(const FVector& Start, const FVector& End);
 	static bool FindSphereBoundaryIntersection(const FVector& Start, const FVector& End,
 		const FVector& Center, float Radius, FVector& OutImpactPoint, FVector& OutImpactNormal);

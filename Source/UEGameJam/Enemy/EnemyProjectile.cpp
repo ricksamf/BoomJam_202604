@@ -72,6 +72,7 @@ void AEnemyProjectile::BeginPlay()
 	// 碰撞（Realm=关 / Surface=开）。我们要的是"任何世界都能命中玩家"，所以
 	// 不论发起者是表还是里世界都强制开启。配合构造函数禁 Tick，整个生命周期保持开启。
 	SetActorEnableCollision(true);
+	IgnoreActiveBallCollision();
 
 	if (LifeTime > 0.f)
 	{
@@ -99,6 +100,7 @@ void AEnemyProjectile::Tick(float DeltaSeconds)
 void AEnemyProjectile::InitializeAndLaunch(const FVector& Direction, float Speed, AActor* InInstigator, ERealmType InRealm)
 {
 	SetInstigator(Cast<APawn>(InInstigator));
+	IgnoreActiveBallCollision();
 
 	// Pawn 通道改 Overlap 后，发射者本人不会触发 Hit，但仍会触发 BeginOverlap。
 	// 在 OnBeginOverlap 里靠 OtherActor != GetInstigator() 过滤即可，无需 IgnoreActorWhenMoving。
@@ -142,6 +144,13 @@ void AEnemyProjectile::InitializeAndLaunch(const FVector& Direction, float Speed
 void AEnemyProjectile::OnHit(UPrimitiveComponent* /*HitComp*/, AActor* OtherActor,
                              UPrimitiveComponent* /*OtherComp*/, FVector /*NormalImpulse*/, const FHitResult& Hit)
 {
+	AGsSkillBigBall* ActiveBall = AGsSkillBigBall::GetActiveInstance();
+	if (IsValid(ActiveBall) && OtherActor == ActiveBall)
+	{
+		IgnoreActiveBallCollision();
+		return;
+	}
+
 	if (bHasPreviousLocation && TryHandleRealmBoundaryBlock(PreviousLocation, Hit.ImpactPoint))
 	{
 		return;
@@ -185,41 +194,6 @@ void AEnemyProjectile::OnBeginOverlap(UPrimitiveComponent* /*OverlappedComp*/, A
 		return;
 	}
 
-	// 硬性世界归属门禁：逐帧线段拦截（上面的 TryHandleRealmBoundaryBlock）只能拦下
-	// "本帧恰好跨越边界"的那一次。但如果子弹已经飞到球外（Previous 与 Current 都在
-	// 球外，或玩家与子弹都在球外贴着边界），逐帧拦截会判定两端同侧而放行，于是这颗
-	// "已穿出"的子弹仍能命中玩家，表现为"穿出球体的子弹依旧击杀主角"。
-	//
-	// 这里补一道与"何时跨界"无关的绝对门禁，直接按子弹的世界归属判断它当前是否处在
-	// 自己的有效区域：
-	//   - 里世界子弹(Realm)  ：只在球内有效；一旦子弹当前位置已在球外 → 失效销毁。
-	//   - 表世界子弹(Surface)：只在球外有效；一旦子弹当前位置已在球内 → 失效销毁。
-	// 该规则与玩家位置无关，能覆盖"子弹与玩家都在球外"等所有跨界穿出情形。
-	{
-		FVector Center;
-		float Radius;
-		if (GetActiveBallBoundary(Center, Radius))
-		{
-			const bool bProjInside = FVector::DistSquared(GetActorLocation(), Center) <= FMath::Square(Radius);
-			const ERealmType ProjRealm = RealmTag ? RealmTag->GetRealmType() : ERealmType::Realm;
-			const bool bProjValidHere = (ProjRealm == ERealmType::Realm) ? bProjInside : !bProjInside;
-			if (!bProjValidHere)
-			{
-				// 销毁点钳到球面，视觉上停在边界。
-				FVector ImpactPoint = GetActorLocation();
-				FVector ImpactNormal = FVector::UpVector;
-				const FVector Dir = (GetActorLocation() - Center).GetSafeNormal();
-				if (!Dir.IsNearlyZero())
-				{
-					ImpactPoint = Center + Dir * Radius;
-					ImpactNormal = Dir;
-				}
-				HandleImpactAndDestroy(ImpactPoint, ImpactNormal);
-				return;
-			}
-		}
-	}
-
 	AController* InstigatorCtrl = GetInstigatorController();
 	UGameplayStatics::ApplyDamage(OtherActor, Damage, InstigatorCtrl, this, DamageTypeClass);
 
@@ -231,6 +205,20 @@ void AEnemyProjectile::OnBeginOverlap(UPrimitiveComponent* /*OverlappedComp*/, A
 	}
 
 	Destroy();
+}
+
+void AEnemyProjectile::IgnoreActiveBallCollision()
+{
+	if (!CollisionComp)
+	{
+		return;
+	}
+
+	AGsSkillBigBall* Ball = AGsSkillBigBall::GetActiveInstance();
+	if (IsValid(Ball))
+	{
+		CollisionComp->IgnoreActorWhenMoving(Ball, true);
+	}
 }
 
 bool AEnemyProjectile::GetActiveBallBoundary(FVector& OutCenter, float& OutRadius)
